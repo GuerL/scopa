@@ -2,6 +2,8 @@ package com.guerl.scopa.multiplayer.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guerl.scopa.game.ScopaGameService;
+import com.guerl.scopa.multiplayer.room.RoomException;
 import com.guerl.scopa.multiplayer.room.RoomSnapshot;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -17,10 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RoomBroadcaster {
 
     private final ObjectMapper objectMapper;
+    private final ScopaGameService scopaGameService;
     private final Map<String, Set<WebSocketSession>> sessionsByRoom = new ConcurrentHashMap<>();
 
-    public RoomBroadcaster(ObjectMapper objectMapper) {
+    public RoomBroadcaster(ObjectMapper objectMapper, ScopaGameService scopaGameService) {
         this.objectMapper = objectMapper;
+        this.scopaGameService = scopaGameService;
     }
 
     public void register(String roomCode, WebSocketSession session) {
@@ -45,9 +49,8 @@ public class RoomBroadcaster {
             return;
         }
 
-        String payload = serialize(room);
         for (WebSocketSession session : sessions) {
-            send(session, payload);
+            send(session, serialize(snapshotForSession(room, session)));
         }
     }
 
@@ -74,6 +77,18 @@ public class RoomBroadcaster {
         return sessions.stream()
                 .anyMatch(session -> session.isOpen()
                         && playerId.equals(session.getAttributes().get(RoomWebSocketHandler.PLAYER_ID_ATTRIBUTE)));
+    }
+
+    private RoomSnapshot snapshotForSession(RoomSnapshot fallback, WebSocketSession session) {
+        Object playerId = session.getAttributes().get(RoomWebSocketHandler.PLAYER_ID_ATTRIBUTE);
+        Object sessionToken = session.getAttributes().get(RoomWebSocketHandler.SESSION_TOKEN_ATTRIBUTE);
+        if (playerId instanceof String id && sessionToken instanceof String token) {
+            try {
+                return scopaGameService.snapshotForPlayer(fallback.roomCode(), id, token);
+            } catch (RoomException ignored) {
+            }
+        }
+        return fallback;
     }
 
     private String serialize(RoomSnapshot room) {

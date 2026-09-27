@@ -1,5 +1,7 @@
 package com.guerl.scopa.multiplayer.room;
 
+import com.guerl.scopa.game.ScopaGameState;
+import com.guerl.scopa.game.ScopaGameStatus;
 import com.guerl.scopa.multiplayer.player.Player;
 import org.springframework.stereotype.Service;
 
@@ -8,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -68,6 +71,7 @@ public class RoomService {
         Room room = getRequiredRoom(normalizedRoomCode);
         synchronized (room) {
             getAuthorizedPlayer(room, playerId, sessionToken);
+            finishGameForRemainingPlayer(room, playerId);
             room.removePlayer(playerId);
             if (room.isEmpty()) {
                 rooms.remove(normalizedRoomCode);
@@ -93,6 +97,19 @@ public class RoomService {
 
     public boolean roomExists(String roomCode) {
         return rooms.containsKey(normalizeRoomCode(roomCode));
+    }
+
+    public <T> T withAuthorizedRoom(
+            String roomCode,
+            String playerId,
+            String sessionToken,
+            BiFunction<Room, Player, T> callback
+    ) {
+        Room room = getRequiredRoom(normalizeRoomCode(roomCode));
+        synchronized (room) {
+            Player player = getAuthorizedPlayer(room, playerId, sessionToken);
+            return callback.apply(room, player);
+        }
     }
 
     String createUniqueRoomCode() {
@@ -139,6 +156,24 @@ public class RoomService {
                 player.getSessionToken(),
                 RoomSnapshot.from(room)
         );
+    }
+
+    private void finishGameForRemainingPlayer(Room room, String leavingPlayerId) {
+        ScopaGameState game = room.getGame();
+        if (game == null || game.getStatus() == ScopaGameStatus.MATCH_FINISHED) {
+            return;
+        }
+
+        room.getPlayers().stream()
+                .filter(player -> !player.getPlayerId().equals(leavingPlayerId))
+                .findFirst()
+                .ifPresent(remainingPlayer -> {
+                    game.setStatus(ScopaGameStatus.MATCH_FINISHED);
+                    game.setWinnerPlayerId(remainingPlayer.getPlayerId());
+                    game.setCurrentPlayerId(null);
+                    game.setLastEvent("GAME_FINISHED");
+                    room.setStatus(RoomStatus.MATCH_FINISHED);
+                });
     }
 
     private String normalizeDisplayName(String displayName) {

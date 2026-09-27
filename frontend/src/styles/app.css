@@ -237,6 +237,245 @@ button.secondary {
   grid-template-columns: 1fr;
 }
 
+.game-shell {
+  background:
+    linear-gradient(160deg, rgba(19, 99, 62, 0.16), transparent 42%),
+    linear-gradient(340deg, rgba(172, 38, 43, 0.1), transparent 50%),
+    #f6f1e8;
+  color: #18201a;
+  min-height: 100vh;
+  padding: 14px;
+}
+
+.game-board,
+.result-screen,
+.winner-screen {
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+  max-width: 720px;
+  width: 100%;
+}
+
+.game-top,
+.table-zone,
+.player-zone,
+.result-screen,
+.winner-screen {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(24, 32, 26, 0.12);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.game-top {
+  display: grid;
+  gap: 10px;
+}
+
+.game-top h2 {
+  font-size: 1.4rem;
+  line-height: 1;
+  margin: 0 0 6px;
+}
+
+.game-top p,
+.my-summary p,
+.move-panel p {
+  color: #5f6d63;
+  margin: 0;
+}
+
+.opponent-hand {
+  display: flex;
+  gap: 8px;
+}
+
+.opponent-hand span {
+  align-items: center;
+  background: #18201a;
+  border-radius: 8px;
+  color: #fffaf0;
+  display: flex;
+  font-weight: 900;
+  height: 58px;
+  justify-content: center;
+  width: 42px;
+}
+
+.round-meta,
+.my-summary {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.round-meta {
+  color: #5f6d63;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.cards {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+}
+
+.hand-cards {
+  grid-template-columns: repeat(3, minmax(82px, 1fr));
+}
+
+.card {
+  aspect-ratio: 0.72;
+  background: #fffaf0;
+  border: 2px solid rgba(24, 32, 26, 0.16);
+  color: #18201a;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  min-height: 112px;
+  padding: 12px 8px;
+}
+
+.card span {
+  font-size: clamp(1.8rem, 11vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.card strong {
+  font-size: 0.78rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.card-gold {
+  background: #ffe49d;
+  border-color: rgba(178, 122, 5, 0.58);
+}
+
+.card-cups {
+  border-color: rgba(172, 38, 43, 0.4);
+  color: #8f2529;
+}
+
+.card-swords {
+  border-color: rgba(47, 80, 130, 0.42);
+  color: #263f70;
+}
+
+.card-clubs {
+  border-color: rgba(20, 118, 72, 0.42);
+  color: #17563a;
+}
+
+.card.selected {
+  box-shadow: 0 0 0 4px rgba(24, 32, 26, 0.18);
+  transform: translateY(-3px);
+}
+
+.card.suggested {
+  border-color: #147648;
+}
+
+.card:disabled {
+  opacity: 0.72;
+}
+
+.turn-banner {
+  color: #151916;
+  font-size: 1.1rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.move-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.scopa-flash {
+  background: #147648;
+  border-radius: 8px;
+  color: #fffaf0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.muted {
+  color: #5f6d63;
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.my-summary {
+  border-top: 1px solid rgba(24, 32, 26, 0.12);
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.compact-button {
+  min-height: 42px;
+  max-width: 120px;
+}
+
+.scoreline {
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.score-grid {
+  align-items: center;
+  border-top: 1px solid rgba(24, 32, 26, 0.1);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  padding: 10px 0;
+}
+
+.score-grid.header {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.score-grid span,
+.score-grid strong {
+  min-width: 0;
+}
+
+.score-grid small {
+  color: #5f6d63;
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.total-row {
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.winner-screen {
+  align-content: center;
+  min-height: calc(100vh - 28px);
+}
+
+.winner-screen h1 {
+  font-size: clamp(3rem, 16vw, 6rem);
+  margin-bottom: 0;
+  text-transform: uppercase;
+}
+
 @media (min-width: 640px) {
   .forms {
     grid-template-columns: 1fr 1fr;
@@ -244,5 +483,27 @@ button.secondary {
 
   .lobby-actions {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .game-shell {
+    padding: 24px;
+  }
+
+  .game-top {
+    align-items: center;
+    grid-template-columns: 1fr auto;
+  }
+
+  .game-top .badges {
+    grid-column: 1 / -1;
+  }
+
+  .move-panel {
+    align-items: center;
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .move-panel button {
+    width: auto;
   }
 }

@@ -18,7 +18,7 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
 
     public static final String ROOM_CODE_ATTRIBUTE = "roomCode";
     public static final String PLAYER_ID_ATTRIBUTE = "playerId";
-    private static final String SESSION_TOKEN_ATTRIBUTE = "sessionToken";
+    public static final String SESSION_TOKEN_ATTRIBUTE = "sessionToken";
 
     private final RoomService roomService;
     private final RoomBroadcaster roomBroadcaster;

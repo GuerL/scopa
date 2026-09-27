@@ -1,6 +1,7 @@
 package com.guerl.scopa.multiplayer.room;
 
 import com.guerl.scopa.multiplayer.player.Player;
+import com.guerl.scopa.game.ScopaGameState;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class Room {
     private final Instant createdAt;
     private final List<Player> players;
     private RoomStatus status;
+    private ScopaGameState game;
 
     public Room(String roomCode, Player hostPlayer) {
         this.roomCode = roomCode;
@@ -46,6 +48,14 @@ public class Room {
 
     public void setStatus(RoomStatus status) {
         this.status = status;
+    }
+
+    public ScopaGameState getGame() {
+        return game;
+    }
+
+    public void setGame(ScopaGameState game) {
+        this.game = game;
     }
 
     public void addPlayer(Player player) {

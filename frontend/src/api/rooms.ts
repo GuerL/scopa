@@ -6,12 +6,71 @@ export type PlayerSnapshot = {
   connected: boolean;
 };
 
+export type ScopaSuit = 'GOLD' | 'CUPS' | 'SWORDS' | 'CLUBS';
+
+export type ScopaCard = {
+  id: string;
+  suit: ScopaSuit;
+  value: number;
+};
+
+export type ScopaPlayerPublicSnapshot = {
+  playerId: string;
+  handCount: number;
+  capturedCount: number;
+  scopasThisRound: number;
+  roundPoints: number;
+  totalPoints: number;
+  roundAcknowledged: boolean;
+  rematchRequested: boolean;
+};
+
+export type ScopaCaptureOption = {
+  handCardId: string;
+  tableCardIds: string[];
+};
+
+export type ScopaScoreLine = {
+  label: string;
+  leftPoints: number;
+  rightPoints: number;
+  leftDetail: string;
+  rightDetail: string;
+};
+
+export type ScopaRoundResult = {
+  leftPlayerId: string;
+  rightPlayerId: string;
+  lines: ScopaScoreLine[];
+  leftRoundPoints: number;
+  rightRoundPoints: number;
+  leftTotalPoints: number;
+  rightTotalPoints: number;
+};
+
+export type ScopaGameSnapshot = {
+  status: 'ACTIVE' | 'ROUND_FINISHED' | 'MATCH_FINISHED';
+  roundNumber: number;
+  tableCards: ScopaCard[];
+  hand: ScopaCard[];
+  possibleCaptures: ScopaCaptureOption[];
+  players: ScopaPlayerPublicSnapshot[];
+  currentPlayerId: string | null;
+  startingPlayerId: string | null;
+  lastCapturingPlayerId: string | null;
+  winnerPlayerId: string | null;
+  deckRemaining: number;
+  roundResult: ScopaRoundResult | null;
+  lastEvent: string | null;
+};
+
 export type RoomSnapshot = {
   roomCode: string;
   hostPlayerId: string;
   players: PlayerSnapshot[];
   createdAt: string;
-  status: 'LOBBY';
+  status: 'LOBBY' | 'IN_GAME' | 'MATCH_FINISHED';
+  game: ScopaGameSnapshot | null;
 };
 
 export type RoomSession = {
@@ -43,6 +102,11 @@ export async function getRoom(roomCode: string): Promise<RoomSnapshot> {
   return request<RoomSnapshot>(`/api/rooms/${encodeURIComponent(roomCode)}`);
 }
 
+export async function getGameRoom(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  const params = new URLSearchParams({ playerId, sessionToken });
+  return request<RoomSnapshot>(`/api/rooms/${encodeURIComponent(roomCode)}/game?${params}`);
+}
+
 export async function setReady(
   roomCode: string,
   playerId: string,
@@ -61,6 +125,38 @@ export async function leaveRoom(
   sessionToken: string,
 ): Promise<{ roomDeleted: boolean }> {
   return request<{ roomDeleted: boolean }>(`/api/rooms/${encodeURIComponent(roomCode)}/leave`, {
+    method: 'POST',
+    body: JSON.stringify({ playerId, sessionToken }),
+  });
+}
+
+export async function startGame(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/start`, playerId, sessionToken);
+}
+
+export async function playCard(
+  roomCode: string,
+  playerId: string,
+  sessionToken: string,
+  cardId: string,
+  captureCardIds: string[],
+): Promise<RoomSnapshot> {
+  return request<RoomSnapshot>(`/api/rooms/${encodeURIComponent(roomCode)}/game/play`, {
+    method: 'POST',
+    body: JSON.stringify({ playerId, sessionToken, cardId, captureCardIds }),
+  });
+}
+
+export async function nextRound(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/next-round`, playerId, sessionToken);
+}
+
+export async function rematch(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/rematch`, playerId, sessionToken);
+}
+
+async function playerAction(path: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return request<RoomSnapshot>(path, {
     method: 'POST',
     body: JSON.stringify({ playerId, sessionToken }),
   });
