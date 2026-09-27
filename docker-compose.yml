@@ -8,8 +8,6 @@ services:
       - "8083:8080"
     expose:
       - "8083"
-    networks:
-      - apps-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health >/dev/null || exit 1"]
       interval: 30s
@@ -28,7 +26,10 @@ services:
     ports:
       - "8082:80"
     networks:
-      - apps-network
+      default:
+      apps-network:
+        aliases:
+          - threepeaks-frontend
 
 networks:
   apps-network:
