@@ -13,6 +13,7 @@ import { createScopaSocket } from './multiplayer/useScopaSocket';
 import './styles/app.css';
 
 const SESSION_STORAGE_KEY = 'scopa.roomSession';
+const DISPLAY_NAME_STORAGE_KEY = 'scopa.displayName';
 
 type BackendState =
   | { status: 'checking' }
@@ -29,8 +30,7 @@ function App() {
   const [backend, setBackend] = useState<BackendState>({ status: 'checking' });
   const [session, setSession] = useState<SavedSession | null>(() => loadSavedSession());
   const [room, setRoom] = useState<RoomSnapshot | null>(null);
-  const [displayName, setDisplayName] = useState('');
-  const [joinDisplayName, setJoinDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState(() => loadSavedDisplayName());
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -54,6 +54,10 @@ function App() {
 
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    saveDisplayName(displayName);
+  }, [displayName]);
 
   useEffect(() => {
     if (!session) {
@@ -105,7 +109,7 @@ function App() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await runAction('create', async () => {
-      const response = await createRoom(displayName);
+      const response = await createRoom(displayName.trim());
       enterRoom(response);
     });
   }
@@ -113,7 +117,7 @@ function App() {
   async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await runAction('join', async () => {
-      const response = await joinRoom(joinCode.trim().toUpperCase(), joinDisplayName);
+      const response = await joinRoom(joinCode.trim().toUpperCase(), displayName.trim());
       enterRoom(response);
     });
   }
@@ -232,32 +236,29 @@ function App() {
         {backend.status === 'offline' && <p className="error">{backend.message}</p>}
         {error && <p className="error">{error}</p>}
 
+        <div className="player-name">
+          <label htmlFor="display-name">Display name</label>
+          <input
+            id="display-name"
+            maxLength={24}
+            onChange={(event) => setDisplayName(event.target.value)}
+            placeholder="Player Name"
+            required
+            value={displayName}
+          />
+        </div>
+
         <div className="forms">
           <form className="flow" onSubmit={handleCreate}>
-            <label htmlFor="create-name">Display name</label>
-            <input
-              id="create-name"
-              maxLength={24}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Player Name"
-              required
-              value={displayName}
-            />
-            <button type="submit" disabled={backend.status !== 'connected' || busyAction === 'create'}>
+            <button
+              type="submit"
+              disabled={backend.status !== 'connected' || busyAction === 'create' || !displayName.trim()}
+            >
               Create game
             </button>
           </form>
 
           <form className="flow" onSubmit={handleJoin}>
-            <label htmlFor="join-name">Display name</label>
-            <input
-              id="join-name"
-              maxLength={24}
-              onChange={(event) => setJoinDisplayName(event.target.value)}
-              placeholder="Player Name"
-              required
-              value={joinDisplayName}
-            />
             <label htmlFor="join-code">Room code</label>
             <input
               autoCapitalize="characters"
@@ -268,7 +269,10 @@ function App() {
               required
               value={joinCode}
             />
-            <button type="submit" disabled={backend.status !== 'connected' || busyAction === 'join'}>
+            <button
+              type="submit"
+              disabled={backend.status !== 'connected' || busyAction === 'join' || !displayName.trim()}
+            >
               Join game
             </button>
           </form>
@@ -298,6 +302,20 @@ function saveSession(session: SavedSession) {
 
 function clearSavedSession() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+function loadSavedDisplayName(): string {
+  return localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) ?? '';
+}
+
+function saveDisplayName(displayName: string) {
+  const trimmedName = displayName.trim();
+  if (trimmedName) {
+    localStorage.setItem(DISPLAY_NAME_STORAGE_KEY, trimmedName);
+    return;
+  }
+
+  localStorage.removeItem(DISPLAY_NAME_STORAGE_KEY);
 }
 
 function errorMessage(unknownError: unknown): string {
