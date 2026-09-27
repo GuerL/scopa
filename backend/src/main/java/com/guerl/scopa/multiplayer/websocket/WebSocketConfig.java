@@ -9,15 +9,15 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final PingWebSocketHandler pingWebSocketHandler;
+    private final RoomWebSocketHandler roomWebSocketHandler;
 
-    public WebSocketConfig(PingWebSocketHandler pingWebSocketHandler) {
-        this.pingWebSocketHandler = pingWebSocketHandler;
+    public WebSocketConfig(RoomWebSocketHandler roomWebSocketHandler) {
+        this.roomWebSocketHandler = roomWebSocketHandler;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(pingWebSocketHandler, "/ws/ping")
+        registry.addHandler(roomWebSocketHandler, "/ws/rooms/{roomCode}")
                 .setAllowedOriginPatterns("*");
     }
 }
