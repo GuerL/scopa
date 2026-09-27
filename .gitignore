@@ -1,0 +1,22 @@
+.DS_Store
+
+# Java
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.tsbuildinfo
+
+# IDE
+.idea/
+*.iml
+
+# Environment
+.env
+.env.*
+!.env.example
