@@ -61,6 +61,15 @@ export function GameScreen({
       ? 'Capture ready.'
       : 'Choose one highlighted capture.'
     : 'No capture available. Play to the table.';
+  const feedbackMessage = error
+    ? error
+    : game.lastEvent === 'SCOPA'
+      ? 'SCOPA!'
+      : selectedHandCardId
+        ? moveHint
+        : isMyTurn
+          ? 'Your turn'
+          : `${currentTurnName(game, players)} is playing...`;
 
   function selectHandCard(cardId: string) {
     setSelectedHandCardId(selectedHandCardId === cardId ? null : cardId);
@@ -133,13 +142,12 @@ export function GameScreen({
           selectedTableCardIds={selectedTableCardIds}
           tableCards={game.tableCards}
         />
-        <div className="turn-context" aria-live="polite">
-          {isMyTurn ? 'Your turn' : `${currentTurnName(game, players)} is playing...`}
+        <div className={`turn-context ${error ? 'is-error' : ''} ${game.lastEvent === 'SCOPA' ? 'is-scopa' : ''}`} aria-live="polite">
+          {feedbackMessage}
         </div>
         <PlayerHand
           busyAction={busyAction}
           canPlay={canPlay}
-          error={error}
           hand={game.hand}
           isMyTurn={isMyTurn}
           moveHint={moveHint}

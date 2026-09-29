@@ -4,7 +4,6 @@ import { ScopaCardButton } from '../cards/ScopaCardButton';
 type PlayerHandProps = {
   busyAction: string | null;
   canPlay: boolean;
-  error: string;
   isMyTurn: boolean;
   moveHint: string;
   myGame: ScopaPlayerPublicSnapshot | null;
@@ -20,7 +19,6 @@ type PlayerHandProps = {
 export function PlayerHand({
   busyAction,
   canPlay,
-  error,
   isMyTurn,
   moveHint,
   myGame,
@@ -34,9 +32,6 @@ export function PlayerHand({
 }: PlayerHandProps) {
   return (
     <footer className={`player-zone ${isMyTurn ? 'is-active' : ''}`}>
-      <div className="turn-banner">
-        <span>{isMyTurn ? 'Your turn' : 'Waiting'}</span>
-      </div>
       <div className="cards hand-cards">
         {hand.map((card) => (
           <ScopaCardButton
@@ -48,18 +43,15 @@ export function PlayerHand({
           />
         ))}
       </div>
-      {selectedHandCardId && (
-        <div className="move-panel">
-          <p>{moveHint}</p>
-          <button type="button" onClick={onPlay} disabled={!canPlay || busyAction === 'play'}>
-            Play card
-          </button>
-          <button className="secondary" type="button" onClick={onCancelSelection}>
-            Cancel
-          </button>
-        </div>
-      )}
-      {error && <p className="error">{error}</p>}
+      <div className="move-panel" aria-live="polite">
+        <p>{selectedHandCardId ? moveHint : isMyTurn ? 'Select a card from your hand.' : 'Actions unlock on your turn.'}</p>
+        <button className="secondary" type="button" onClick={onCancelSelection} disabled={!selectedHandCardId}>
+          Cancel
+        </button>
+        <button type="button" onClick={onPlay} disabled={!canPlay || busyAction === 'play'}>
+          Confirm move
+        </button>
+      </div>
       <div className="my-summary">
         <div>
           <strong>{player?.displayName ?? 'You'}</strong>

@@ -19,8 +19,8 @@ export function PlayerHeader({ connected, gamePlayer, player }: PlayerHeaderProp
         </p>
       </div>
       <div className="opponent-hand" aria-label="Opponent hidden cards">
-        {Array.from({ length: gamePlayer?.handCount ?? 0 }, (_, index) => (
-          <CardBack index={index} key={index} />
+        {Array.from({ length: 3 }, (_, index) => (
+          <CardBack hidden={index >= (gamePlayer?.handCount ?? 0)} index={index} key={index} />
         ))}
       </div>
       <span className="player-signal">

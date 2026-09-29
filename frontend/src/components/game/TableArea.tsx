@@ -30,8 +30,8 @@ export function TableArea({
         <span>Round {roundNumber}</span>
         <span>Deck {deckRemaining}</span>
       </div>
-      {lastEvent === 'SCOPA' && <ScopaFeedback />}
-      <div className="table-felt">
+      <div className={`table-felt ${lastEvent === 'SCOPA' ? 'has-scopa' : ''}`}>
+        {lastEvent === 'SCOPA' && <ScopaFeedback />}
         <div className="cards table-cards">
           {tableCards.length === 0 && <p className="muted">The table is clear.</p>}
           {tableCards.map((card) => {
