@@ -18,13 +18,17 @@
   --shadow-lift: 0 16px 30px rgba(44, 33, 18, 0.2);
   --radius: 8px;
   --card-radius: 10px;
-  --game-gap: 8px;
-  --opponent-zone: 74px;
-  --feedback-zone: 42px;
-  --hand-zone: 268px;
-  --table-card-height: 102px;
-  --hand-card-height: 108px;
-  --card-gap: 8px;
+  --game-gap: clamp(7px, 1.4vh, 12px);
+  --opponent-zone: clamp(64px, 11vh, 78px);
+  --table-zone: clamp(190px, 31vh, 260px);
+  --feedback-zone: 40px;
+  --hand-card-width: clamp(78px, 27vw, 102px);
+  --hand-card-height: calc(var(--hand-card-width) / 0.68);
+  --table-card-width: clamp(56px, 18vw, 82px);
+  --table-card-height: calc(var(--table-card-width) / 0.68);
+  --actions-zone: 90px;
+  --info-zone: 46px;
+  --card-gap: clamp(6px, 1.5vw, 10px);
   --speed: 160ms;
   color: var(--charcoal);
   background: var(--parchment);
@@ -376,12 +380,18 @@ h1 {
   color: var(--ivory);
   display: grid;
   overflow: hidden;
+  place-items: center;
 }
 
 .game-board {
   display: grid;
   gap: var(--game-gap);
-  grid-template-rows: var(--opponent-zone) minmax(0, 1fr) var(--feedback-zone) var(--hand-zone);
+  grid-template-areas:
+    "opponent"
+    "table"
+    "status"
+    "hand";
+  grid-template-rows: var(--opponent-zone) var(--table-zone) var(--feedback-zone) minmax(0, auto);
   margin: 0 auto;
   max-width: 760px;
   min-height: 0;
@@ -397,21 +407,22 @@ h1 {
 
 .game-top {
   align-items: center;
-  background: rgba(255, 249, 236, 0.08);
+  background: rgba(255, 249, 236, 0.06);
   border: 1px solid rgba(255, 249, 236, 0.13);
   display: grid;
   gap: 10px;
+  grid-area: opponent;
   grid-template-columns: 1fr auto;
   min-height: 0;
   overflow: hidden;
-  padding: 12px;
+  padding: 9px 10px;
 }
 
 .game-top h2 {
   color: var(--ivory);
-  font-size: 1.28rem;
+  font-size: clamp(1rem, 3.8vw, 1.28rem);
   line-height: 1;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .game-top p,
@@ -435,11 +446,11 @@ h1 {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
-  min-width: 110px;
+  min-width: 104px;
 }
 
 .card-back {
-  aspect-ratio: 0.72;
+  aspect-ratio: 0.68;
   background:
     linear-gradient(45deg, transparent 42%, rgba(243, 211, 123, 0.8) 43% 48%, transparent 49%),
     linear-gradient(135deg, transparent 42%, rgba(243, 211, 123, 0.8) 43% 48%, transparent 49%),
@@ -449,9 +460,9 @@ h1 {
   box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18);
   display: inline-grid;
   margin-left: var(--card-offset, 0);
-  min-height: 58px;
+  height: clamp(48px, 8.5vh, 58px);
   place-items: center;
-  width: 42px;
+  width: auto;
 }
 
 .card-back.is-placeholder {
@@ -471,10 +482,11 @@ h1 {
     rgba(10, 22, 14, 0.36);
   border: 1px solid rgba(255, 249, 236, 0.12);
   display: grid;
+  grid-area: table;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
-  padding: 12px;
+  padding: 10px;
 }
 
 .round-meta {
@@ -484,14 +496,14 @@ h1 {
   font-size: 0.84rem;
   font-weight: 850;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .table-felt {
-  align-content: center;
   display: grid;
   min-height: 0;
   overflow: hidden;
+  place-items: center;
   position: relative;
 }
 
@@ -503,20 +515,23 @@ h1 {
 .table-cards {
   align-content: center;
   grid-auto-rows: var(--table-card-height);
-  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--table-card-width), var(--table-card-width)));
+  justify-content: center;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   padding: 3px;
   scrollbar-width: thin;
+  width: min(100%, 720px);
 }
 
 .hand-cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, var(--hand-card-width)));
+  justify-content: center;
 }
 
 .scopa-card {
-  aspect-ratio: auto;
+  aspect-ratio: 0.68;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 34%),
     var(--paper);
@@ -525,17 +540,20 @@ h1 {
   box-shadow: var(--shadow-card);
   color: var(--charcoal);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr;
   justify-items: center;
   height: var(--table-card-height);
   min-height: 0;
-  padding: 8px;
+  overflow: hidden;
+  padding: clamp(5px, 1.3vw, 8px);
   position: relative;
   transform-origin: center bottom;
+  width: var(--table-card-width);
 }
 
 .hand-cards .scopa-card {
   height: var(--hand-card-height);
+  width: var(--hand-card-width);
 }
 
 .scopa-card:hover:not(:disabled) {
@@ -570,20 +588,24 @@ h1 {
   align-items: center;
   color: currentColor;
   display: grid;
-  font-size: 0.75rem;
+  font-size: clamp(0.62rem, 1.9vw, 0.78rem);
   font-weight: 900;
   justify-items: center;
-  justify-self: start;
+  left: 7px;
   line-height: 1;
+  position: absolute;
+  top: 7px;
 }
 
-.card-corner em,
-.card-title em {
+.card-corner em {
   font-style: normal;
 }
 
 .card-corner-bottom {
-  justify-self: end;
+  bottom: 7px;
+  left: auto;
+  right: 7px;
+  top: auto;
   transform: rotate(180deg);
 }
 
@@ -593,29 +615,12 @@ h1 {
   border-radius: 999px;
   display: flex;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2rem, 10vw, 3.4rem);
+  font-size: clamp(1.85rem, calc(var(--table-card-width) * 0.42), 3rem);
   font-weight: 900;
-  height: clamp(46px, 13vw, 70px);
+  height: min(58%, 64px);
   justify-content: center;
-  width: clamp(46px, 13vw, 70px);
-}
-
-.card-title {
-  display: grid;
-  justify-items: center;
-  line-height: 1;
-}
-
-.card-title strong {
-  font-size: clamp(1.35rem, 7vw, 2.2rem);
-  line-height: 1;
-}
-
-.card-title em {
-  font-size: 0.66rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  place-self: center;
+  width: min(58%, 64px);
 }
 
 .scopa-card-gold {
@@ -664,10 +669,11 @@ h1 {
   font-weight: 950;
   align-items: center;
   display: flex;
+  grid-area: status;
   justify-content: center;
   min-height: 0;
   overflow: hidden;
-  padding: 12px;
+  padding: 0 12px;
   text-align: center;
   text-transform: uppercase;
 }
@@ -683,30 +689,31 @@ h1 {
 }
 
 .player-zone {
-  background: rgba(255, 249, 236, 0.1);
-  border: 1px solid rgba(255, 249, 236, 0.18);
+  background: transparent;
+  border: 0;
   display: grid;
-  gap: 8px;
-  grid-template-rows: var(--hand-card-height) 78px minmax(40px, auto);
+  gap: var(--game-gap);
+  grid-area: hand;
+  grid-template-rows: var(--hand-card-height) var(--actions-zone) var(--info-zone);
   min-height: 0;
   overflow: hidden;
-  padding: 12px;
+  padding: 0;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 .player-zone.is-active {
-  box-shadow: 0 0 0 2px rgba(201, 154, 46, 0.22) inset;
+  box-shadow: none;
 }
 
 .move-panel {
-  background: rgba(23, 32, 22, 0.34);
-  border: 1px solid rgba(255, 249, 236, 0.14);
-  border-radius: var(--radius);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   display: grid;
-  gap: 8px;
+  gap: 7px;
   grid-template-columns: 1fr 1fr;
   min-height: 78px;
-  padding: 8px;
+  padding: 0;
 }
 
 .move-panel p {
@@ -763,11 +770,15 @@ h1 {
 
 .my-summary {
   align-items: center;
+  background: rgba(255, 249, 236, 0.06);
+  border: 1px solid rgba(255, 249, 236, 0.12);
+  border-radius: var(--radius);
   display: flex;
   gap: 12px;
   justify-content: space-between;
   min-height: 40px;
   overflow: hidden;
+  padding: 6px 8px;
 }
 
 .my-summary strong {
@@ -922,6 +933,18 @@ h1 {
 }
 
 @media (max-width: 420px) {
+  :root {
+    --game-gap: 6px;
+    --opponent-zone: 58px;
+    --table-zone: clamp(145px, 27vh, 190px);
+    --feedback-zone: 38px;
+    --hand-card-width: clamp(74px, 27vw, 94px);
+    --table-card-width: clamp(52px, 18vw, 66px);
+    --actions-zone: 78px;
+    --info-zone: 42px;
+    --card-gap: 6px;
+  }
+
   .app-shell,
   .game-shell {
     padding:
@@ -931,12 +954,8 @@ h1 {
       max(12px, env(safe-area-inset-left));
   }
 
-  .table-cards {
-    grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
-  }
-
-  .hand-cards {
-    grid-template-columns: repeat(3, minmax(76px, 1fr));
+  .game-top {
+    padding: 6px 8px;
   }
 
   .score-grid {
@@ -966,7 +985,6 @@ h1 {
   }
 
   .game-board {
-    gap: 14px;
     max-width: 900px;
   }
 
@@ -979,33 +997,84 @@ h1 {
   }
 
   .move-panel {
-    align-items: center;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(120px, 180px) minmax(140px, 220px);
+    justify-content: center;
   }
 
   .move-panel button {
-    width: auto;
+    width: 100%;
   }
 }
 
 @media (min-width: 920px) {
+  :root {
+    --game-gap: 10px;
+    --opponent-zone: 70px;
+    --table-zone: clamp(250px, 34vh, 320px);
+    --feedback-zone: 42px;
+    --table-card-width: clamp(82px, 6.8vw, 100px);
+    --hand-card-width: 116px;
+    --actions-zone: 68px;
+    --info-zone: 44px;
+    --card-gap: 12px;
+  }
+
+  .game-shell {
+    align-items: center;
+    justify-items: center;
+  }
+
   .game-board {
-    grid-template-columns: 1fr minmax(320px, 0.85fr);
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--opponent-zone) var(--table-zone) var(--feedback-zone) minmax(0, auto);
+    max-width: min(1180px, calc(100vw - 56px));
   }
 
   .game-top,
   .turn-context,
   .player-zone {
-    grid-column: 2;
+    grid-column: 1;
   }
 
   .table-zone {
     grid-column: 1;
-    grid-row: 1 / 4;
+    grid-row: auto;
+    justify-self: center;
+    max-width: 1080px;
+    width: 100%;
   }
 
   .table-cards {
-    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    max-width: 980px;
+    justify-self: center;
+    width: 100%;
+  }
+
+  .player-zone {
+    grid-template-rows: var(--hand-card-height) var(--actions-zone) var(--info-zone);
+    justify-self: center;
+    max-width: 720px;
+    width: 100%;
+  }
+
+  .move-panel {
+    grid-template-columns: repeat(2, minmax(150px, 210px));
+    justify-content: center;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .move-panel p {
+    display: block;
+    grid-column: 1 / -1;
+  }
+
+  .move-panel button {
+    min-height: 42px;
+  }
+
+  .my-summary {
+    justify-self: center;
+    width: 100%;
   }
 }

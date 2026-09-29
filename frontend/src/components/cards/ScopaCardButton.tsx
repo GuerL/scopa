@@ -1,5 +1,5 @@
 import type { ScopaCard } from '../../api/rooms';
-import { cardName, suitGlyph, suitName } from './cardText';
+import { cardName, suitGlyph } from './cardText';
 
 type ScopaCardButtonProps = {
   card: ScopaCard;
@@ -39,10 +39,6 @@ export function ScopaCardButton({
       </span>
       <span className="suit-mark" aria-hidden="true">
         {suitGlyph(card.suit)}
-      </span>
-      <span className="card-title">
-        <strong>{card.value}</strong>
-        <em>{suitName(card.suit)}</em>
       </span>
       <span className="card-corner card-corner-bottom">
         <strong>{card.value}</strong>

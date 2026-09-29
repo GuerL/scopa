@@ -15,7 +15,7 @@ export function PlayerHeader({ connected, gamePlayer, player }: PlayerHeaderProp
         <h2>{player?.displayName ?? 'Waiting'}</h2>
         <p>
           {gamePlayer?.totalPoints ?? 0} pts · {gamePlayer?.scopasThisRound ?? 0}{' '}
-          {gamePlayer?.scopasThisRound === 1 ? 'scopa' : 'scope'}
+          {gamePlayer?.scopasThisRound === 1 ? 'scopa' : 'scope'} · {gamePlayer?.capturedCount ?? 0} captured
         </p>
       </div>
       <div className="opponent-hand" aria-label="Opponent hidden cards">
