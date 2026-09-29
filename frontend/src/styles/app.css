@@ -18,17 +18,22 @@
   --shadow-lift: 0 16px 30px rgba(44, 33, 18, 0.2);
   --radius: 8px;
   --card-radius: 10px;
-  --game-gap: clamp(7px, 1.4vh, 12px);
-  --opponent-zone: clamp(64px, 11vh, 78px);
-  --table-zone: clamp(190px, 31vh, 260px);
-  --feedback-zone: 40px;
-  --hand-card-width: clamp(78px, 27vw, 102px);
+  --card-width-mobile-table: clamp(54px, 17.5vw, 78px);
+  --card-width-mobile-hand: clamp(78px, 26vw, 100px);
+  --card-width-desktop-table: clamp(90px, 7.4vw, 110px);
+  --card-width-desktop-hand: 128px;
+  --card-width-opponent: clamp(46px, 8vh, 56px);
+  --game-gap: clamp(6px, 1.15vh, 10px);
+  --opponent-zone: clamp(60px, 10vh, 72px);
+  --table-zone: clamp(178px, 29vh, 244px);
+  --feedback-zone: 38px;
+  --hand-card-width: var(--card-width-mobile-hand);
   --hand-card-height: calc(var(--hand-card-width) / 0.68);
-  --table-card-width: clamp(56px, 18vw, 82px);
+  --table-card-width: var(--card-width-mobile-table);
   --table-card-height: calc(var(--table-card-width) / 0.68);
-  --actions-zone: 90px;
-  --info-zone: 46px;
-  --card-gap: clamp(6px, 1.5vw, 10px);
+  --actions-zone: 84px;
+  --info-zone: 42px;
+  --card-gap: clamp(6px, 1.3vw, 9px);
   --speed: 160ms;
   color: var(--charcoal);
   background: var(--parchment);
@@ -380,6 +385,11 @@ h1 {
   color: var(--ivory);
   display: grid;
   overflow: hidden;
+  padding:
+    max(14px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
   place-items: center;
 }
 
@@ -410,19 +420,19 @@ h1 {
   background: rgba(255, 249, 236, 0.06);
   border: 1px solid rgba(255, 249, 236, 0.13);
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-area: opponent;
   grid-template-columns: 1fr auto;
   min-height: 0;
   overflow: hidden;
-  padding: 9px 10px;
+  padding: 7px 9px;
 }
 
 .game-top h2 {
   color: var(--ivory);
   font-size: clamp(1rem, 3.8vw, 1.28rem);
   line-height: 1;
-  margin: 0 0 4px;
+  margin: 0 0 3px;
 }
 
 .game-top p,
@@ -438,15 +448,15 @@ h1 {
   display: inline-flex;
   font-size: 0.78rem;
   font-weight: 800;
-  gap: 7px;
+  gap: 6px;
   grid-column: 1 / -1;
 }
 
 .opponent-hand {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   justify-content: flex-end;
-  min-width: 104px;
+  min-width: 98px;
 }
 
 .card-back {
@@ -460,7 +470,7 @@ h1 {
   box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18);
   display: inline-grid;
   margin-left: var(--card-offset, 0);
-  height: clamp(48px, 8.5vh, 58px);
+  height: var(--card-width-opponent);
   place-items: center;
   width: auto;
 }
@@ -486,7 +496,7 @@ h1 {
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
 }
 
 .round-meta {
@@ -496,7 +506,7 @@ h1 {
   font-size: 0.84rem;
   font-weight: 850;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .table-felt {
@@ -673,7 +683,7 @@ h1 {
   justify-content: center;
   min-height: 0;
   overflow: hidden;
-  padding: 0 12px;
+  padding: 0 10px;
   text-align: center;
   text-transform: uppercase;
 }
@@ -710,7 +720,7 @@ h1 {
   border: 0;
   border-radius: 0;
   display: grid;
-  gap: 7px;
+  gap: 6px;
   grid-template-columns: 1fr 1fr;
   min-height: 78px;
   padding: 0;
@@ -719,7 +729,7 @@ h1 {
 .move-panel p {
   align-self: center;
   grid-column: 1 / -1;
-  min-height: 18px;
+  min-height: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -778,7 +788,7 @@ h1 {
   justify-content: space-between;
   min-height: 40px;
   overflow: hidden;
-  padding: 6px 8px;
+  padding: 5px 7px;
 }
 
 .my-summary strong {
@@ -934,14 +944,15 @@ h1 {
 
 @media (max-width: 420px) {
   :root {
-    --game-gap: 6px;
-    --opponent-zone: 58px;
-    --table-zone: clamp(145px, 27vh, 190px);
-    --feedback-zone: 38px;
-    --hand-card-width: clamp(74px, 27vw, 94px);
-    --table-card-width: clamp(52px, 18vw, 66px);
-    --actions-zone: 78px;
-    --info-zone: 42px;
+    --card-width-mobile-table: clamp(51px, 17.5vw, 64px);
+    --card-width-mobile-hand: clamp(74px, 26.5vw, 92px);
+    --card-width-opponent: clamp(43px, 8vh, 52px);
+    --game-gap: 5px;
+    --opponent-zone: 56px;
+    --table-zone: clamp(138px, 25vh, 176px);
+    --feedback-zone: 36px;
+    --actions-zone: 74px;
+    --info-zone: 40px;
     --card-gap: 6px;
   }
 
@@ -955,7 +966,7 @@ h1 {
   }
 
   .game-top {
-    padding: 6px 8px;
+    padding: 5px 7px;
   }
 
   .score-grid {
@@ -1012,8 +1023,9 @@ h1 {
     --opponent-zone: 70px;
     --table-zone: clamp(250px, 34vh, 320px);
     --feedback-zone: 42px;
-    --table-card-width: clamp(82px, 6.8vw, 100px);
-    --hand-card-width: 116px;
+    --table-card-width: var(--card-width-desktop-table);
+    --hand-card-width: var(--card-width-desktop-hand);
+    --card-width-opponent: 62px;
     --actions-zone: 68px;
     --info-zone: 44px;
     --card-gap: 12px;
