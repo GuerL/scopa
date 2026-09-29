@@ -42,11 +42,11 @@ public class ScopaGameService {
             if (room.getGame() != null && room.getGame().getStatus() == ScopaGameStatus.ACTIVE) {
                 throw new RoomException("Game already started");
             }
-            if (room.getPlayers().size() != 2) {
-                throw new RoomException("Two players are required to start");
+            if (room.getPlayers().size() < Room.MIN_PLAYERS) {
+                throw new RoomException("At least two players are required to start");
             }
             if (room.getPlayers().stream().anyMatch(candidate -> !candidate.isReady())) {
-                throw new RoomException("Both players must be ready");
+                throw new RoomException("All players must be ready");
             }
 
             List<String> playerOrder = playerOrder(room);
@@ -131,7 +131,7 @@ public class ScopaGameService {
             game.getPlayers().get(player.getPlayerId()).setRoundAcknowledged(true);
             if (game.getPlayers().values().stream().allMatch(ScopaPlayerState::isRoundAcknowledged)) {
                 List<String> order = playerOrder(room);
-                String nextStarter = otherPlayerId(order, game.getStartingPlayerId());
+                String nextStarter = nextPlayerId(order, game.getStartingPlayerId());
                 setupRound(game, order, nextStarter, game.getRoundNumber() + 1, false, ScopaDeck.shuffled(random));
             }
             return RoomSnapshot.from(room, player.getPlayerId(), rules);
@@ -215,7 +215,7 @@ public class ScopaGameService {
             return;
         }
 
-        game.setCurrentPlayerId(otherPlayerId(order, game.getCurrentPlayerId()));
+        game.setCurrentPlayerId(nextPlayerId(order, game.getCurrentPlayerId()));
         if (!"HAND_DEALT".equals(game.getLastEvent()) && !"SCOPA".equals(game.getLastEvent())) {
             game.setLastEvent("TURN_CHANGED");
         }
@@ -250,17 +250,20 @@ public class ScopaGameService {
     }
 
     private String winnerIfAny(List<String> order, ScopaGameState game) {
-        ScopaPlayerState left = game.getPlayers().get(order.get(0));
-        ScopaPlayerState right = game.getPlayers().get(order.get(1));
-        boolean leftReached = left.getTotalPoints() >= WINNING_SCORE;
-        boolean rightReached = right.getTotalPoints() >= WINNING_SCORE;
-        if (!leftReached && !rightReached) {
+        int highest = order.stream()
+                .map(game.getPlayers()::get)
+                .mapToInt(ScopaPlayerState::getTotalPoints)
+                .max()
+                .orElse(0);
+        if (highest < WINNING_SCORE) {
             return null;
         }
-        if (left.getTotalPoints() == right.getTotalPoints()) {
-            return null;
-        }
-        return left.getTotalPoints() > right.getTotalPoints() ? left.getPlayerId() : right.getPlayerId();
+
+        List<ScopaPlayerState> leaders = order.stream()
+                .map(game.getPlayers()::get)
+                .filter(player -> player.getTotalPoints() == highest)
+                .toList();
+        return leaders.size() == 1 ? leaders.getFirst().getPlayerId() : null;
     }
 
     private void dealHands(ScopaGameState game, List<String> playerOrder) {
@@ -309,10 +312,11 @@ public class ScopaGameService {
         return room.getPlayers().stream().map(Player::getPlayerId).toList();
     }
 
-    private String otherPlayerId(List<String> playerOrder, String playerId) {
-        return playerOrder.stream()
-                .filter(candidate -> !candidate.equals(playerId))
-                .findFirst()
-                .orElseThrow(() -> new RoomException("Opponent is missing"));
+    private String nextPlayerId(List<String> playerOrder, String playerId) {
+        int currentIndex = playerOrder.indexOf(playerId);
+        if (currentIndex < 0 || playerOrder.isEmpty()) {
+            throw new RoomException("Current player is missing");
+        }
+        return playerOrder.get((currentIndex + 1) % playerOrder.size());
     }
 }

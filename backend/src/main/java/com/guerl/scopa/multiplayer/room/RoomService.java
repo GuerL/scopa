@@ -6,6 +6,7 @@ import com.guerl.scopa.multiplayer.player.Player;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -71,12 +72,13 @@ public class RoomService {
         Room room = getRequiredRoom(normalizedRoomCode);
         synchronized (room) {
             getAuthorizedPlayer(room, playerId, sessionToken);
-            finishGameForRemainingPlayer(room, playerId);
+            List<String> previousOrder = room.getPlayers().stream().map(Player::getPlayerId).toList();
             room.removePlayer(playerId);
             if (room.isEmpty()) {
                 rooms.remove(normalizedRoomCode);
                 return Optional.empty();
             }
+            removePlayerFromGame(room, playerId, previousOrder);
             return Optional.of(RoomSnapshot.from(room));
         }
     }
@@ -158,22 +160,51 @@ public class RoomService {
         );
     }
 
-    private void finishGameForRemainingPlayer(Room room, String leavingPlayerId) {
+    private void removePlayerFromGame(Room room, String leavingPlayerId, List<String> previousOrder) {
         ScopaGameState game = room.getGame();
         if (game == null || game.getStatus() == ScopaGameStatus.MATCH_FINISHED) {
             return;
         }
 
-        room.getPlayers().stream()
-                .filter(player -> !player.getPlayerId().equals(leavingPlayerId))
-                .findFirst()
-                .ifPresent(remainingPlayer -> {
-                    game.setStatus(ScopaGameStatus.MATCH_FINISHED);
-                    game.setWinnerPlayerId(remainingPlayer.getPlayerId());
-                    game.setCurrentPlayerId(null);
-                    game.setLastEvent("GAME_FINISHED");
-                    room.setStatus(RoomStatus.MATCH_FINISHED);
-                });
+        game.getPlayers().remove(leavingPlayerId);
+        List<String> remainingOrder = room.getPlayers().stream().map(Player::getPlayerId).toList();
+        if (remainingOrder.size() < Room.MIN_PLAYERS) {
+            finishGameForWinner(room, game, remainingOrder.getFirst());
+            return;
+        }
+
+        if (leavingPlayerId.equals(game.getLastCapturingPlayerId())) {
+            game.setLastCapturingPlayerId(null);
+        }
+        if (leavingPlayerId.equals(game.getStartingPlayerId())) {
+            game.setStartingPlayerId(nextRemainingPlayer(previousOrder, remainingOrder, leavingPlayerId));
+        }
+        if (leavingPlayerId.equals(game.getCurrentPlayerId())) {
+            game.setCurrentPlayerId(nextRemainingPlayer(previousOrder, remainingOrder, leavingPlayerId));
+            game.setLastEvent("TURN_CHANGED");
+        }
+    }
+
+    private void finishGameForWinner(Room room, ScopaGameState game, String winnerPlayerId) {
+        game.setStatus(ScopaGameStatus.MATCH_FINISHED);
+        game.setWinnerPlayerId(winnerPlayerId);
+        game.setCurrentPlayerId(null);
+        game.setLastEvent("GAME_FINISHED");
+        room.setStatus(RoomStatus.MATCH_FINISHED);
+    }
+
+    private String nextRemainingPlayer(List<String> previousOrder, List<String> remainingOrder, String playerId) {
+        int start = previousOrder.indexOf(playerId);
+        if (start < 0) {
+            return remainingOrder.getFirst();
+        }
+        for (int offset = 1; offset <= previousOrder.size(); offset++) {
+            String candidate = previousOrder.get((start + offset) % previousOrder.size());
+            if (remainingOrder.contains(candidate)) {
+                return candidate;
+            }
+        }
+        return remainingOrder.getFirst();
     }
 
     private String normalizeDisplayName(String displayName) {

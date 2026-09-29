@@ -409,10 +409,20 @@ h1 {
   width: 100%;
 }
 
+.opponents,
 .game-top,
 .table-zone,
 .player-zone {
   border-radius: var(--radius);
+}
+
+.opponents {
+  display: flex;
+  gap: 6px;
+  grid-area: opponent;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .game-top {
@@ -421,11 +431,12 @@ h1 {
   border: 1px solid rgba(255, 249, 236, 0.13);
   display: grid;
   gap: 8px;
-  grid-area: opponent;
   grid-template-columns: 1fr auto;
   min-height: 0;
   overflow: hidden;
   padding: 7px 9px;
+  min-width: min(260px, 86vw);
+  flex: 1 0 0;
 }
 
 .game-top h2 {
@@ -1042,6 +1053,7 @@ h1 {
     max-width: min(1180px, calc(100vw - 56px));
   }
 
+  .opponents,
   .game-top,
   .turn-context,
   .player-zone {

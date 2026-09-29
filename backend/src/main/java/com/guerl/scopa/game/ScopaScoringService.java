@@ -1,73 +1,108 @@
 package com.guerl.scopa.game;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class ScopaScoringService {
 
     public ScopaRoundResult scoreRound(List<String> playerOrder, ScopaGameState game) {
-        String leftId = playerOrder.get(0);
-        String rightId = playerOrder.get(1);
-        ScopaPlayerState left = game.getPlayers().get(leftId);
-        ScopaPlayerState right = game.getPlayers().get(rightId);
-
-        int leftCards = left.getCapturedCards().size();
-        int rightCards = right.getCapturedCards().size();
-        int leftGold = countGold(left);
-        int rightGold = countGold(right);
-        boolean leftGold7 = hasGoldValue(left, 7);
-        boolean rightGold7 = hasGoldValue(right, 7);
-        boolean leftGold10 = hasGoldValue(left, 10);
-        boolean rightGold10 = hasGoldValue(right, 10);
-
-        int leftRound = 0;
-        int rightRound = 0;
+        Map<String, Integer> roundPoints = new LinkedHashMap<>();
+        playerOrder.forEach(playerId -> roundPoints.put(playerId, 0));
         List<ScopaScoreLine> lines = new ArrayList<>();
 
-        int leftMostCards = leftCards > rightCards ? 1 : 0;
-        int rightMostCards = rightCards > leftCards ? 1 : 0;
-        leftRound += leftMostCards;
-        rightRound += rightMostCards;
-        lines.add(new ScopaScoreLine("Most cards", leftMostCards, rightMostCards, leftCards + " cards", rightCards + " cards"));
+        lines.add(highestValueLine(playerOrder, game, roundPoints, "Most cards",
+                player -> player.getCapturedCards().size(),
+                value -> value + " cards"));
+        lines.add(highestValueLine(playerOrder, game, roundPoints, "Most Gold",
+                this::countGold,
+                String::valueOf));
+        lines.add(booleanLine(playerOrder, game, roundPoints, "7 Gold",
+                player -> hasGoldValue(player, 7),
+                "Captured"));
+        lines.add(booleanLine(playerOrder, game, roundPoints, "10 Gold",
+                player -> hasGoldValue(player, 10),
+                "Captured"));
+        lines.add(scopaLine(playerOrder, game, roundPoints));
 
-        int leftMostGold = leftGold > rightGold ? 1 : 0;
-        int rightMostGold = rightGold > leftGold ? 1 : 0;
-        leftRound += leftMostGold;
-        rightRound += rightMostGold;
-        lines.add(new ScopaScoreLine("Most Gold", leftMostGold, rightMostGold, String.valueOf(leftGold), String.valueOf(rightGold)));
+        List<ScopaRoundPlayerResult> playerResults = playerOrder.stream()
+                .map(playerId -> {
+                    ScopaPlayerState player = game.getPlayers().get(playerId);
+                    int points = roundPoints.get(playerId);
+                    player.setRoundPoints(points);
+                    player.setTotalPoints(player.getTotalPoints() + points);
+                    return new ScopaRoundPlayerResult(playerId, points, player.getTotalPoints());
+                })
+                .toList();
 
-        int leftSettebello = leftGold7 ? 1 : 0;
-        int rightSettebello = rightGold7 ? 1 : 0;
-        leftRound += leftSettebello;
-        rightRound += rightSettebello;
-        lines.add(new ScopaScoreLine("7 Gold", leftSettebello, rightSettebello, leftGold7 ? "Captured" : "-", rightGold7 ? "Captured" : "-"));
+        return new ScopaRoundResult(playerResults, lines);
+    }
 
-        int leftGoldTen = leftGold10 ? 1 : 0;
-        int rightGoldTen = rightGold10 ? 1 : 0;
-        leftRound += leftGoldTen;
-        rightRound += rightGoldTen;
-        lines.add(new ScopaScoreLine("10 Gold", leftGoldTen, rightGoldTen, leftGold10 ? "Captured" : "-", rightGold10 ? "Captured" : "-"));
+    private ScopaScoreLine highestValueLine(
+            List<String> playerOrder,
+            ScopaGameState game,
+            Map<String, Integer> roundPoints,
+            String label,
+            Function<ScopaPlayerState, Integer> value,
+            Function<Integer, String> detail
+    ) {
+        Map<String, Integer> values = new LinkedHashMap<>();
+        int highest = Integer.MIN_VALUE;
+        for (String playerId : playerOrder) {
+            int playerValue = value.apply(game.getPlayers().get(playerId));
+            values.put(playerId, playerValue);
+            highest = Math.max(highest, playerValue);
+        }
 
-        int leftScopa = left.getScopasThisRound();
-        int rightScopa = right.getScopasThisRound();
-        leftRound += leftScopa;
-        rightRound += rightScopa;
-        lines.add(new ScopaScoreLine("Scopa", leftScopa, rightScopa, leftScopa + " Scopa", rightScopa + " Scopa"));
+        int winners = 0;
+        for (int playerValue : values.values()) {
+            if (playerValue == highest) {
+                winners++;
+            }
+        }
+        int winningValue = highest;
+        int winnerCount = winners;
 
-        left.setRoundPoints(leftRound);
-        right.setRoundPoints(rightRound);
-        left.setTotalPoints(left.getTotalPoints() + leftRound);
-        right.setTotalPoints(right.getTotalPoints() + rightRound);
+        List<ScopaScoreLinePlayer> linePlayers = playerOrder.stream()
+                .map(playerId -> {
+                    int points = winnerCount == 1 && values.get(playerId) == winningValue ? 1 : 0;
+                    roundPoints.computeIfPresent(playerId, (id, current) -> current + points);
+                    return new ScopaScoreLinePlayer(playerId, points, detail.apply(values.get(playerId)));
+                })
+                .toList();
+        return new ScopaScoreLine(label, linePlayers);
+    }
 
-        return new ScopaRoundResult(
-                leftId,
-                rightId,
-                lines,
-                leftRound,
-                rightRound,
-                left.getTotalPoints(),
-                right.getTotalPoints()
-        );
+    private ScopaScoreLine booleanLine(
+            List<String> playerOrder,
+            ScopaGameState game,
+            Map<String, Integer> roundPoints,
+            String label,
+            Function<ScopaPlayerState, Boolean> captured,
+            String capturedDetail
+    ) {
+        List<ScopaScoreLinePlayer> linePlayers = playerOrder.stream()
+                .map(playerId -> {
+                    boolean hasCard = captured.apply(game.getPlayers().get(playerId));
+                    int points = hasCard ? 1 : 0;
+                    roundPoints.computeIfPresent(playerId, (id, current) -> current + points);
+                    return new ScopaScoreLinePlayer(playerId, points, hasCard ? capturedDetail : "-");
+                })
+                .toList();
+        return new ScopaScoreLine(label, linePlayers);
+    }
+
+    private ScopaScoreLine scopaLine(List<String> playerOrder, ScopaGameState game, Map<String, Integer> roundPoints) {
+        List<ScopaScoreLinePlayer> linePlayers = playerOrder.stream()
+                .map(playerId -> {
+                    int points = game.getPlayers().get(playerId).getScopasThisRound();
+                    roundPoints.computeIfPresent(playerId, (id, current) -> current + points);
+                    return new ScopaScoreLinePlayer(playerId, points, points + " Scopa");
+                })
+                .toList();
+        return new ScopaScoreLine("Scopa", linePlayers);
     }
 
     private int countGold(ScopaPlayerState player) {

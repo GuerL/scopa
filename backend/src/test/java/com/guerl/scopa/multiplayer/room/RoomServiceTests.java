@@ -50,11 +50,13 @@ class RoomServiceTests {
     }
 
     @Test
-    void rejectsRoomWhenFull() {
+    void rejectsFifthPlayerWhenRoomFull() {
         RoomSessionResponse host = roomService.createRoom("Quentin");
         roomService.joinRoom(host.roomCode(), "Manon");
+        roomService.joinRoom(host.roomCode(), "Lina");
+        roomService.joinRoom(host.roomCode(), "Noah");
 
-        assertThatThrownBy(() -> roomService.joinRoom(host.roomCode(), "Lina"))
+        assertThatThrownBy(() -> roomService.joinRoom(host.roomCode(), "Sofia"))
                 .isInstanceOf(RoomException.class)
                 .hasMessageContaining("full");
     }

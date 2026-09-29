@@ -48,9 +48,8 @@ export function GameScreen({
   socketState,
 }: GameScreenProps) {
   const me = players.find((player) => player.playerId === session.playerId);
-  const opponent = players.find((player) => player.playerId !== session.playerId);
+  const opponents = players.filter((player) => player.playerId !== session.playerId);
   const myGame = playerGameState(game, session.playerId);
-  const opponentGame = playerGameState(game, opponent?.playerId);
   const isMyTurn = game.status === 'ACTIVE' && game.currentPlayerId === session.playerId;
   const selectedOptions = game.possibleCaptures.filter((option) => option.handCardId === selectedHandCardId);
   const mustCapture = selectedOptions.length > 0;
@@ -130,7 +129,16 @@ export function GameScreen({
   return (
     <main className="game-shell">
       <section className="game-board" aria-label="Scopa game board">
-        <PlayerHeader connected={opponent?.connected} gamePlayer={opponentGame} player={opponent} />
+        <div className="opponents">
+          {opponents.map((opponent) => (
+            <PlayerHeader
+              connected={opponent.connected}
+              gamePlayer={playerGameState(game, opponent.playerId)}
+              key={opponent.playerId}
+              player={opponent}
+            />
+          ))}
+        </div>
         <TableArea
           deckRemaining={game.deckRemaining}
           lastEvent={game.lastEvent}

@@ -32,20 +32,20 @@ export type ScopaCaptureOption = {
 
 export type ScopaScoreLine = {
   label: string;
-  leftPoints: number;
-  rightPoints: number;
-  leftDetail: string;
-  rightDetail: string;
+  players: {
+    playerId: string;
+    points: number;
+    detail: string;
+  }[];
 };
 
 export type ScopaRoundResult = {
-  leftPlayerId: string;
-  rightPlayerId: string;
+  players: {
+    playerId: string;
+    roundPoints: number;
+    totalPoints: number;
+  }[];
   lines: ScopaScoreLine[];
-  leftRoundPoints: number;
-  rightRoundPoints: number;
-  leftTotalPoints: number;
-  rightTotalPoints: number;
 };
 
 export type ScopaGameSnapshot = {

@@ -114,7 +114,7 @@ function App() {
     () => room?.players.find((player) => player.playerId === session?.playerId) ?? null,
     [room, session],
   );
-  const bothPlayersReady = room?.players.length === 2 && room.players.every((player) => player.ready);
+  const readyToStart = room ? room.players.length >= 2 && room.players.every((player) => player.ready) : false;
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -258,7 +258,7 @@ function App() {
         onReady={handleReady}
         onStartGame={handleStartGame}
         players={room.players}
-        readyToStart={Boolean(bothPlayersReady)}
+        readyToStart={readyToStart}
         roomCode={room.roomCode}
         socketState={socketState}
       />

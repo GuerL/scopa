@@ -39,7 +39,7 @@ export function LandingScreen({
         </div>
         <p className="eyebrow">Gioco italiano</p>
         <h1 id="app-title">Scopa</h1>
-        <p className="subtitle">A warm, tactical card game for two.</p>
+        <p className="subtitle">A warm, mutiplayer tactical card game.</p>
 
         <div className="connection-line" role="status">
           <span className={`signal signal-${backendStatus}`} aria-hidden="true" />

@@ -10,6 +10,9 @@ import java.util.Optional;
 
 public class Room {
 
+    public static final int MIN_PLAYERS = 2;
+    public static final int MAX_PLAYERS = 4;
+
     private final String roomCode;
     private final String hostPlayerId;
     private final Instant createdAt;
@@ -82,6 +85,6 @@ public class Room {
     }
 
     public boolean isFull() {
-        return players.size() >= 2;
+        return players.size() >= MAX_PLAYERS;
     }
 }
