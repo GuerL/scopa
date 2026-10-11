@@ -1,5 +1,5 @@
 services:
-  backend:
+  scopa-backend:
     build:
       context: ./backend
     container_name: scopa-backend
@@ -7,7 +7,10 @@ services:
     ports:
       - "8083:8080"
     expose:
-      - "8083"
+      - "8080"
+    networks:
+      default:
+      apps-network:
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health >/dev/null || exit 1"]
       interval: 30s
@@ -15,21 +18,19 @@ services:
       start_period: 20s
       retries: 3
 
-  frontend:
+  scopa-frontend:
     build:
       context: ./frontend
     container_name: scopa-frontend
     restart: unless-stopped
     depends_on:
-      backend:
+      scopa-backend:
         condition: service_healthy
     ports:
       - "8082:80"
     networks:
       default:
       apps-network:
-        aliases:
-          - threepeaks-frontend
 
 networks:
   apps-network:
