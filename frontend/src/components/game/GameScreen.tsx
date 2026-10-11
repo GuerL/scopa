@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import type { PlayerSnapshot, ScopaGameSnapshot } from '../../api/rooms';
-import { MoveFeedback, moveSummary, useMoveFeedback } from './MoveFeedback';
+import { MoveAnimationLayer, moveSummary, useMoveFeedback, useBoardGeometry } from './MoveFeedback';
 import { PlayerHand } from './PlayerHand';
 import { PlayerHeader } from './PlayerHeader';
 import { TableArea } from './TableArea';
@@ -49,7 +50,11 @@ export function GameScreen({
   socketState,
 }: GameScreenProps) {
   const { feedback, animating, reduced } = useMoveFeedback(game.lastMove, roomCode);
-  const overlay = <MoveFeedback move={feedback} animating={animating} reduced={reduced} />;
+  const board = useRef<HTMLElement | null>(null);
+  const geometry = useBoardGeometry(game, board);
+  const overlay = feedback && animating && !reduced
+    ? <MoveAnimationLayer key={feedback.sequence} move={feedback} board={board}
+        previousGeometry={geometry} localPlayerId={session.playerId} /> : null;
   const me = players.find((player) => player.playerId === session.playerId);
   const opponents = players.filter((player) => player.playerId !== session.playerId);
   const myGame = playerGameState(game, session.playerId);
@@ -101,7 +106,7 @@ export function GameScreen({
   if (game.status === 'ROUND_FINISHED' && game.roundResult) {
     return (
       <>
-      <div className="move-result-context" aria-live="polite">{overlay}{feedback && !animating && <p>{moveSummary(feedback)}</p>}</div>
+      <div className="move-result-context" aria-live="polite">{feedback && <p>{moveSummary(feedback)}</p>}</div>
       <ResultScreen
         busyAction={busyAction}
         currentPlayerId={session.playerId}
@@ -120,7 +125,7 @@ export function GameScreen({
   if (game.status === 'MATCH_FINISHED') {
     return (
       <>
-      <div className="move-result-context" aria-live="polite">{overlay}{feedback && !animating && <p>{moveSummary(feedback)}</p>}</div>
+      <div className="move-result-context" aria-live="polite">{feedback && <p>{moveSummary(feedback)}</p>}</div>
       <WinnerScreen
         busyAction={busyAction}
         error={error}
@@ -137,7 +142,7 @@ export function GameScreen({
 
   return (
     <main className="game-shell">
-      <section className="game-board" aria-label="Scopa game board">
+      <section ref={board} className="game-board" aria-label="Scopa game board">
         {overlay}
         <div className="opponents">
           {opponents.map((opponent) => (
@@ -150,6 +155,7 @@ export function GameScreen({
           ))}
         </div>
         <TableArea
+          animatedPlayedCardId={animating && feedback && !feedback.capturedCards.length ? feedback.playedCard.id : null}
           deckRemaining={game.deckRemaining}
           mustCapture={mustCapture}
           onSelectTableCard={selectTableCard}

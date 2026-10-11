@@ -2,6 +2,7 @@ import type { ScopaCard, ScopaCaptureOption } from '../../api/rooms';
 import { ScopaCardButton } from '../cards/ScopaCardButton';
 
 type TableAreaProps = {
+  animatedPlayedCardId: string | null;
   deckRemaining: number;
   mustCapture: boolean;
   onSelectTableCard: (cardId: string) => void;
@@ -13,6 +14,7 @@ type TableAreaProps = {
 };
 
 export function TableArea({
+  animatedPlayedCardId,
   deckRemaining,
   mustCapture,
   onSelectTableCard,
@@ -36,6 +38,7 @@ export function TableArea({
             return (
               <ScopaCardButton
                 card={card}
+                temporaryHidden={card.id === animatedPlayedCardId}
                 disabled={!selectedHandCardId || !mustCapture || !suggested}
                 key={card.id}
                 onClick={() => onSelectTableCard(card.id)}

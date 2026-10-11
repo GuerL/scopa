@@ -3,6 +3,7 @@ import { cardName, suitGlyph } from './cardText';
 
 type ScopaCardButtonProps = {
   card: ScopaCard;
+  temporaryHidden?: boolean;
   disabled?: boolean;
   onClick: () => void;
   selected?: boolean;
@@ -12,6 +13,7 @@ type ScopaCardButtonProps = {
 
 export function ScopaCardButton({
   card,
+  temporaryHidden = false,
   disabled = false,
   onClick,
   selected = false,
@@ -20,10 +22,12 @@ export function ScopaCardButton({
 }: ScopaCardButtonProps) {
   return (
     <button
+      data-card-id={card.id}
       aria-label={cardName(card)}
       aria-pressed={selected}
       className={[
         'scopa-card',
+        temporaryHidden ? 'is-move-hidden' : '',
         `scopa-card-${card.suit.toLowerCase()}`,
         selected ? 'is-selected' : '',
         suggested ? 'is-suggested' : '',
