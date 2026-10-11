@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getHealth, type HealthResponse } from './api/health';
 import {
   createRoom,
@@ -14,6 +14,7 @@ import {
   type RoomSession,
   type RoomSnapshot,
 } from './api/rooms';
+import { LeaveGameDialog } from './components/LeaveGameDialog';
 import { GameScreen } from './components/game/GameScreen';
 import { LandingScreen } from './components/lobby/LandingScreen';
 import { LobbyScreen } from './components/lobby/LobbyScreen';
@@ -35,6 +36,9 @@ type SavedSession = {
 };
 
 function App() {
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const leaveInFlight = useRef(false);
+  const leaveTrigger = useRef<HTMLElement | null>(null);
   const [backend, setBackend] = useState<BackendState>({ status: 'checking' });
   const [session, setSession] = useState<SavedSession | null>(() => loadSavedSession());
   const [room, setRoom] = useState<RoomSnapshot | null>(null);
@@ -182,6 +186,27 @@ function App() {
     });
   }
 
+  function requestLeave() {
+    leaveTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setLeaveDialogOpen(true);
+  }
+
+  function cancelLeave() {
+    setLeaveDialogOpen(false);
+    leaveTrigger.current?.focus();
+  }
+
+  async function confirmLeave() {
+    if (leaveInFlight.current) return;
+    leaveInFlight.current = true;
+    setLeaveDialogOpen(false);
+    try {
+      await handleLeave();
+    } finally {
+      leaveInFlight.current = false;
+    }
+  }
+
   async function handleLeave() {
     if (!session) {
       return;
@@ -225,43 +250,57 @@ function App() {
     setRoom(response.room);
   }
 
+  const leaveDialog = leaveDialogOpen && session && room ? (
+    <LeaveGameDialog
+      active={room.game?.status === 'ACTIVE'}
+      onCancel={cancelLeave}
+      onConfirm={confirmLeave}
+    />
+  ) : null;
+
   if (session && room?.game) {
     return (
-      <GameScreen
-        busyAction={busyAction}
-        error={error}
-        game={room.game}
-        onLeave={handleLeave}
-        onNextRound={handleNextRound}
-        onPlay={handlePlay}
-        onRematch={handleRematch}
-        players={room.players}
-        roomCode={room.roomCode}
-        selectedHandCardId={selectedHandCardId}
-        selectedTableCardIds={selectedTableCardIds}
-        session={session}
-        setSelectedHandCardId={setSelectedHandCardId}
-        setSelectedTableCardIds={setSelectedTableCardIds}
-        socketState={socketState}
-      />
+      <>
+        <GameScreen
+          busyAction={busyAction}
+          error={error}
+          game={room.game}
+          onLeave={requestLeave}
+          onNextRound={handleNextRound}
+          onPlay={handlePlay}
+          onRematch={handleRematch}
+          players={room.players}
+          roomCode={room.roomCode}
+          selectedHandCardId={selectedHandCardId}
+          selectedTableCardIds={selectedTableCardIds}
+          session={session}
+          setSelectedHandCardId={setSelectedHandCardId}
+          setSelectedTableCardIds={setSelectedTableCardIds}
+          socketState={socketState}
+        />
+        {leaveDialog}
+      </>
     );
   }
 
   if (session && room) {
     return (
-      <LobbyScreen
-        busyAction={busyAction}
-        currentPlayer={currentPlayer}
-        error={error}
-        onCopyRoom={copyRoomCode}
-        onLeave={handleLeave}
-        onReady={handleReady}
-        onStartGame={handleStartGame}
-        players={room.players}
-        readyToStart={readyToStart}
-        roomCode={room.roomCode}
-        socketState={socketState}
-      />
+      <>
+        <LobbyScreen
+          busyAction={busyAction}
+          currentPlayer={currentPlayer}
+          error={error}
+          onCopyRoom={copyRoomCode}
+          onLeave={requestLeave}
+          onReady={handleReady}
+          onStartGame={handleStartGame}
+          players={room.players}
+          readyToStart={readyToStart}
+          roomCode={room.roomCode}
+          socketState={socketState}
+        />
+        {leaveDialog}
+      </>
     );
   }
 
