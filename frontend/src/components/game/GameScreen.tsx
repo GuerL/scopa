@@ -49,12 +49,12 @@ export function GameScreen({
   setSelectedTableCardIds,
   socketState,
 }: GameScreenProps) {
-  const { feedback, animating, reduced } = useMoveFeedback(game.lastMove, roomCode);
+  const { feedback, animating, presenting, reduced } = useMoveFeedback(game.lastMove, roomCode);
   const board = useRef<HTMLElement | null>(null);
   const geometry = useBoardGeometry(game, board);
-  const overlay = feedback && animating && !reduced
+  const overlay = feedback && presenting && (!reduced || feedback.capturedCards.length > 0)
     ? <MoveAnimationLayer key={feedback.sequence} move={feedback} board={board}
-        previousGeometry={geometry} localPlayerId={session.playerId} /> : null;
+        previousGeometry={geometry} localPlayerId={session.playerId} reduced={reduced} /> : null;
   const me = players.find((player) => player.playerId === session.playerId);
   const opponents = players.filter((player) => player.playerId !== session.playerId);
   const myGame = playerGameState(game, session.playerId);

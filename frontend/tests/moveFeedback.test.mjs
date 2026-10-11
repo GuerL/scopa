@@ -44,7 +44,7 @@ function client(reduced = false) {
     pending.splice(0).forEach(fn => fn());
     return result;
   }
-  return { render, renderLayer, renderGeometry, advance(ms) { clock += ms; for (const [id, timer] of timers) {
+  return { render, renderLayer, renderGeometry, captureStagingPosition: exports.captureStagingPosition, advance(ms) { clock += ms; for (const [id, timer] of timers) {
     if (timer.at <= clock) { timers.delete(id); timer.fn(); }
   } } };
 }
@@ -80,10 +80,10 @@ test('round resets clear visuals while keeping the sequence watermark', () => {
   assert.equal(c.render(move(6)).animating, true);
 });
 
-test('capture lasts 900 ms and leaves its text summary afterward', () => {
+test('capture lasts 1100 ms and leaves its text summary afterward', () => {
   const c = client(); c.render(null);
   const m = { ...move(1), capturedCards: [{ id: 'cups-7', value: 7, suit: 'CUPS' }] };
-  c.render(m); c.advance(899);
+  c.render(m); c.advance(1099);
   assert.equal(c.render(m).animating, true);
   c.advance(1); assert.equal(c.render(m).animating, false);
   assert.equal(c.render(m).feedback.sequence, 1);
@@ -96,7 +96,7 @@ function layerFixture(playerId) {
   const players = ['local', 'manon', 'jeremie'].map((id, i) => ({ dataset: { playerId: id },
     querySelector: () => ({ getBoundingClientRect: () => rect(i * 100, id === 'local' ? 300 : 0) }) }));
   const root = { getBoundingClientRect: () => ({ x: 0, y: 0, width: 400, height: 500 }),
-    querySelector: selector => selector === '.table-cards' ? table : { getBoundingClientRect: () => rect(0, 0) },
+    querySelector: selector => (selector === '.table-cards' || selector === '.table-zone') ? table : { getBoundingClientRect: () => rect(0, 0) },
     querySelectorAll: () => players };
   return { move: { ...move(1), playerId, capturedCards: [{ id: 'cups-7', value: 7, suit: 'CUPS' }] },
     board: { current: root }, localPlayerId: 'local',
@@ -106,7 +106,7 @@ test('local card leaves its previous hand position and captured card starts in p
   const tree = client().renderLayer(layerFixture('local'));
   const group = tree.props.children;
   const [captured, played] = group.props.children;
-  assert.equal(played.props.style['--card-dy'], '185px');
+  assert.equal(played.props.style.top + parseFloat(played.props.style['--card-dy']), 300);
   assert.equal(captured[0].props.style.left, 80);
   assert.ok(parseFloat(group.props.style['--capture-right']) > 0);
 });
@@ -129,4 +129,31 @@ test('card geometry survives the authoritative move snapshot and duplicate snaps
   assert.equal(geometry.current.previousCards.get('cups-7').x, 80);
   c.renderGeometry({ lastMove: move(1) }, board);
   assert.equal(geometry.current.previousCards.get('cups-7').x, 80);
+});
+
+test('played card stages without covering captured cards for single and multi-card captures', () => {
+  const c = client();
+  const bounds = { x: 0, y: 0, width: 400, height: 500 };
+  const size = { x: 170, y: 115, width: 60, height: 90 };
+  for (const cards of [
+    [{ x: 170, y: 115, width: 60, height: 90 }],
+    [{ x: 80, y: 110, width: 60, height: 90 }, { x: 150, y: 110, width: 60, height: 90 },
+     { x: 80, y: 210, width: 60, height: 90 }],
+    [{ x: 0, y: 100, width: 400, height: 90 }],
+  ]) {
+    const target = c.captureStagingPosition(cards, size, bounds);
+    for (const card of cards) assert.ok(target.x + target.width <= card.x || target.x >= card.x + card.width
+      || target.y + target.height <= card.y || target.y >= card.y + card.height);
+    assert.ok(target.x >= 0 && target.y >= 0 && target.x + target.width <= 400 && target.y + target.height <= 500);
+  }
+});
+test('reduced motion keeps a staged capture highlight for 1100 ms without travel', () => {
+  const c = client(true); c.render(null);
+  const m = layerFixture('local').move;
+  assert.equal(c.render(m).presenting, true);
+  assert.equal(c.render(m).animating, false);
+  c.advance(1100); assert.equal(c.render(m).presenting, false);
+  assert.equal(c.render(m).feedback.sequence, 1);
+  const layer = client().renderLayer({ ...layerFixture('local'), reduced: true });
+  assert.ok(layer.props.className.includes('is-reduced'));
 });
