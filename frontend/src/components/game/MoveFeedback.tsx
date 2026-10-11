@@ -31,8 +31,8 @@ export function useMoveFeedback(move: ScopaLastMove | null, scope: string) {
     setFeedback(move);
     const animate = Boolean(move && isNewMove(sequence, previous) && !reduced);
     setAnimating(animate);
-    const settle = window.setTimeout(() => setAnimating(false), move?.capturedCards.length ? 760 : 360);
-    const clear = window.setTimeout(() => setFeedback(null), (animate ? 760 : 0) + 1800);
+    const settle = window.setTimeout(() => setAnimating(false), move?.capturedCards.length ? 1400 : 1000);
+    const clear = window.setTimeout(() => setFeedback(null), (animate ? (move?.capturedCards.length ? 1400 : 1000) : 0) + 2600);
     return () => { window.clearTimeout(settle); window.clearTimeout(clear); };
     // Move payload is immutable for a sequence; unrelated snapshots must not reset timers.
     // eslint-disable-next-line react-hooks/exhaustive-deps

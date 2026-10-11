@@ -44,16 +44,16 @@ test('initial/reconnected snapshot is static context', () => {
   const c = client(); const m = move(42);
   assert.equal(c.render(m).animating, false);
   assert.equal(c.render(m).feedback.sequence, 42);
-  c.advance(1800); assert.equal(c.render(m).feedback, null);
+  c.advance(2600); assert.equal(c.render(m).feedback, null);
 });
 test('new sequences animate once, duplicates do not restart, next move replaces active feedback', () => {
   const c = client(); c.render(null);
   assert.equal(c.render(move(1)).animating, true);
-  c.advance(200); c.render(move(1)); c.advance(160);
+  c.advance(200); c.render(move(1)); c.advance(800);
   assert.equal(c.render(move(1)).animating, false);
   assert.equal(c.render(move(2)).animating, true);
   assert.equal(c.render(move(3)).feedback.sequence, 3);
-  c.advance(2600); assert.equal(c.render(move(3)).feedback, null);
+  c.advance(4000); assert.equal(c.render(move(3)).feedback, null);
   assert.equal(c.render(move(3)).animating, false);
 });
 test('reduced motion preserves public feedback without movement', () => {
