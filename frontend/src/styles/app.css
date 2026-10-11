@@ -1119,19 +1119,19 @@ h1 {
 .move-overlay .scopa-card { width: 56px; height: 80px; min-width: 0; opacity: 1; }
 .move-overlay .suit-mark { font-size: 22px; }
 .move-played { animation: move-to-table 500ms ease-out both; }
-.move-captured { animation: capture-highlight 1400ms ease both; flex-wrap: wrap; }
-.move-cards.is-capture { animation: capture-to-player 1400ms ease both; }
+.move-captured { animation: capture-highlight 2400ms ease both; flex-wrap: wrap; }
+.move-cards.is-capture { animation: capture-to-player 2400ms ease both; }
 @keyframes move-to-table {
   from { transform: translate(var(--move-x), var(--move-y)) scale(0.65); opacity: 0; }
   to { transform: translate(0, 0); opacity: 1; }
 }
 @keyframes capture-highlight {
-  0%, 35% { opacity: 0; }
-  48%, 80% { opacity: 1; filter: drop-shadow(0 0 6px #f3d37b); }
+  0%, 21% { opacity: 0; }
+  28%, 85% { opacity: 1; filter: drop-shadow(0 0 6px #f3d37b); }
   100% { opacity: 0; }
 }
 @keyframes capture-to-player {
-  0%, 65% { transform: translate(0, 0); }
+  0%, 82% { transform: translate(0, 0); }
   100% { transform: translate(var(--move-x), var(--move-y)) scale(0.65); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
