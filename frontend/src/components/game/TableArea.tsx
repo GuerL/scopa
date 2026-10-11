@@ -3,7 +3,6 @@ import { ScopaCardButton } from '../cards/ScopaCardButton';
 
 type TableAreaProps = {
   deckRemaining: number;
-  lastEvent: string | null;
   mustCapture: boolean;
   onSelectTableCard: (cardId: string) => void;
   roundNumber: number;
@@ -15,7 +14,6 @@ type TableAreaProps = {
 
 export function TableArea({
   deckRemaining,
-  lastEvent,
   mustCapture,
   onSelectTableCard,
   roundNumber,
@@ -30,8 +28,7 @@ export function TableArea({
         <span>Round {roundNumber}</span>
         <span>Deck {deckRemaining}</span>
       </div>
-      <div className={`table-felt ${lastEvent === 'SCOPA' ? 'has-scopa' : ''}`}>
-        {lastEvent === 'SCOPA' && <ScopaFeedback />}
+      <div className="table-felt">
         <div className="cards table-cards">
           {tableCards.length === 0 && <p className="muted">The table is clear.</p>}
           {tableCards.map((card) => {
@@ -51,15 +48,5 @@ export function TableArea({
         </div>
       </div>
     </section>
-  );
-}
-
-function ScopaFeedback() {
-  return (
-    <div className="scopa-flash" role="status">
-      <span aria-hidden="true">O</span>
-      SCOPA!
-      <span aria-hidden="true">O</span>
-    </div>
   );
 }

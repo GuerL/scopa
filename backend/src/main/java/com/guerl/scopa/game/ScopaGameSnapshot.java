@@ -15,7 +15,8 @@ public record ScopaGameSnapshot(
         String winnerPlayerId,
         int deckRemaining,
         ScopaRoundResult roundResult,
-        String lastEvent
+        String lastEvent,
+        ScopaLastMove lastMove
 ) {
 
     public static ScopaGameSnapshot forPlayer(ScopaGameState game, String viewerPlayerId, ScopaRules rules) {
@@ -43,7 +44,8 @@ public record ScopaGameSnapshot(
                 game.getWinnerPlayerId(),
                 game.getDeck().size(),
                 game.getRoundResult(),
-                game.getLastEvent()
+                game.getLastEvent(),
+                game.getLastMove()
         );
     }
 }

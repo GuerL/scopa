@@ -92,6 +92,8 @@ public class ScopaGameService {
             List<String> selectedCaptureIds = request.captureCardIds() == null ? List.of() : request.captureCardIds();
             List<List<ScopaCard>> possibleCaptures = rules.possibleCaptures(playedCard, game.getTableCards());
 
+            List<ScopaCard> captured = List.of();
+            boolean scopa = false;
             if (possibleCaptures.isEmpty()) {
                 if (!selectedCaptureIds.isEmpty()) {
                     playerState.getHand().add(playedCard);
@@ -105,11 +107,12 @@ public class ScopaGameService {
                     throw new RoomException("Invalid capture");
                 }
 
-                List<ScopaCard> captured = removeCards(game.getTableCards(), selectedCaptureIds);
+                captured = removeCards(game.getTableCards(), selectedCaptureIds);
                 playerState.getCapturedCards().add(playedCard);
                 playerState.getCapturedCards().addAll(captured);
                 game.setLastCapturingPlayerId(player.getPlayerId());
                 if (game.getTableCards().isEmpty()) {
+                    scopa = true;
                     playerState.incrementScopasThisRound();
                     game.setLastEvent("SCOPA");
                 } else {
@@ -117,6 +120,7 @@ public class ScopaGameService {
                 }
             }
 
+            game.recordMove(player.getPlayerId(), player.getDisplayName(), playedCard, captured, scopa);
             afterTurn(room, game);
             return RoomSnapshot.from(room, player.getPlayerId(), rules);
         });
@@ -182,6 +186,7 @@ public class ScopaGameService {
         game.setLastCapturingPlayerId(null);
         game.setWinnerPlayerId(null);
         game.setRoundResult(null);
+        game.clearLastMove();
         game.setLastEvent(roundNumber == 1 ? "GAME_STARTED" : "NEXT_ROUND_STARTED");
         game.getDeck().clear();
         game.getTableCards().clear();

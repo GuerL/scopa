@@ -1,4 +1,5 @@
 import type { PlayerSnapshot, ScopaGameSnapshot } from '../../api/rooms';
+import { MoveFeedback, moveSummary, useMoveFeedback } from './MoveFeedback';
 import { PlayerHand } from './PlayerHand';
 import { PlayerHeader } from './PlayerHeader';
 import { TableArea } from './TableArea';
@@ -47,6 +48,8 @@ export function GameScreen({
   setSelectedTableCardIds,
   socketState,
 }: GameScreenProps) {
+  const { feedback, animating, reduced } = useMoveFeedback(game.lastMove, roomCode);
+  const overlay = <MoveFeedback move={feedback} animating={animating} reduced={reduced} />;
   const me = players.find((player) => player.playerId === session.playerId);
   const opponents = players.filter((player) => player.playerId !== session.playerId);
   const myGame = playerGameState(game, session.playerId);
@@ -62,8 +65,8 @@ export function GameScreen({
     : 'No capture available. Play to the table.';
   const feedbackMessage = error
     ? error
-    : game.lastEvent === 'SCOPA'
-      ? 'SCOPA!'
+    : animating && feedback
+      ? moveSummary(feedback)
       : selectedHandCardId
         ? moveHint
         : isMyTurn
@@ -97,6 +100,8 @@ export function GameScreen({
 
   if (game.status === 'ROUND_FINISHED' && game.roundResult) {
     return (
+      <>
+      <div className="move-result-context" aria-live="polite">{overlay}{feedback && !animating && <p>{moveSummary(feedback)}</p>}</div>
       <ResultScreen
         busyAction={busyAction}
         currentPlayerId={session.playerId}
@@ -108,11 +113,14 @@ export function GameScreen({
         roomCode={roomCode}
         socketState={socketState}
       />
+      </>
     );
   }
 
   if (game.status === 'MATCH_FINISHED') {
     return (
+      <>
+      <div className="move-result-context" aria-live="polite">{overlay}{feedback && !animating && <p>{moveSummary(feedback)}</p>}</div>
       <WinnerScreen
         busyAction={busyAction}
         error={error}
@@ -123,12 +131,14 @@ export function GameScreen({
         players={players}
         roomCode={roomCode}
       />
+      </>
     );
   }
 
   return (
     <main className="game-shell">
       <section className="game-board" aria-label="Scopa game board">
+        {overlay}
         <div className="opponents">
           {opponents.map((opponent) => (
             <PlayerHeader
@@ -141,7 +151,6 @@ export function GameScreen({
         </div>
         <TableArea
           deckRemaining={game.deckRemaining}
-          lastEvent={game.lastEvent}
           mustCapture={mustCapture}
           onSelectTableCard={selectTableCard}
           roundNumber={game.roundNumber}
@@ -150,9 +159,10 @@ export function GameScreen({
           selectedTableCardIds={selectedTableCardIds}
           tableCards={game.tableCards}
         />
-        <div className={`turn-context ${error ? 'is-error' : ''} ${game.lastEvent === 'SCOPA' ? 'is-scopa' : ''}`} aria-live="polite">
-          {feedbackMessage}
+        <div className={`turn-context ${error ? 'is-error' : ''} ${feedback?.scopa ? 'is-scopa' : ''}`} aria-live="polite">
+          <span>{feedbackMessage}{!animating && feedback && <small className="last-move-summary">{moveSummary(feedback)}</small>}</span>
         </div>
+        <div className="local-player-area" data-player-id={session.playerId}>
         <PlayerHand
           busyAction={busyAction}
           canPlay={canPlay}
@@ -167,6 +177,7 @@ export function GameScreen({
           player={me}
           selectedHandCardId={selectedHandCardId}
         />
+        </div>
       </section>
     </main>
   );

@@ -18,6 +18,18 @@ public class ScopaGameState {
     private String winnerPlayerId;
     private ScopaRoundResult roundResult;
     private String lastEvent;
+    private long moveSequence;
+    private ScopaLastMove lastMove;
+
+    public ScopaLastMove getLastMove() { return lastMove; }
+
+    public void recordMove(String playerId, String displayName, ScopaCard playedCard,
+                           List<ScopaCard> capturedCards, boolean scopa) {
+        lastMove = new ScopaLastMove(playerId, displayName, playedCard, capturedCards, scopa, ++moveSequence);
+    }
+
+    public void clearLastMove() { lastMove = null; }
+
 
     public ScopaGameStatus getStatus() {
         return status;

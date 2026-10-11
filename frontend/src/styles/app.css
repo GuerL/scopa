@@ -1102,3 +1102,44 @@ h1 {
     width: 100%;
   }
 }
+
+/* Public move visuals sit above the immediately updated authoritative board. */
+.game-board { position: relative; }
+.local-player-area { grid-area: hand; min-height: 0; }
+.last-move-summary { display: block; font-size: 0.65em; font-weight: 500; text-transform: none; }
+.move-overlay {
+  position: absolute; z-index: 10; left: 50%; top: 42%;
+  transform: translate(-50%, -50%); pointer-events: none;
+  width: max-content; max-width: 95%; text-align: center;
+  padding: 10px; border-radius: 12px; background: rgba(14, 40, 31, 0.94);
+  color: var(--ivory);
+}
+.move-title { font-weight: 900; margin-bottom: 8px; }
+.move-cards, .move-captured { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.move-overlay .scopa-card { width: 56px; height: 80px; min-width: 0; opacity: 1; }
+.move-overlay .suit-mark { font-size: 22px; }
+.move-played { animation: move-to-table 360ms ease-out both; }
+.move-captured { animation: capture-highlight 760ms ease both; flex-wrap: wrap; }
+.move-cards.is-capture { animation: capture-to-player 760ms ease both; }
+@keyframes move-to-table {
+  from { transform: translate(var(--move-x), var(--move-y)) scale(0.65); opacity: 0; }
+  to { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes capture-highlight {
+  0%, 35% { opacity: 0; }
+  48%, 80% { opacity: 1; filter: drop-shadow(0 0 6px #f3d37b); }
+  100% { opacity: 0; }
+}
+@keyframes capture-to-player {
+  0%, 65% { transform: translate(0, 0); }
+  100% { transform: translate(var(--move-x), var(--move-y)) scale(0.65); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .move-overlay *, .turn-context.is-scopa { animation: none !important; }
+}
+
+.game-shell > .move-overlay { position: fixed; top: 50%; }
+
+.move-result-context { position: fixed; top: 10px; left: 5%; width: 90%; z-index: 20; pointer-events: none; text-align: center; }
+.move-result-context > .move-overlay { position: fixed; top: 50%; }
+.move-result-context > p { background: var(--felt); color: var(--ivory); border-radius: 12px; padding: 8px; }

@@ -50,7 +50,10 @@ public class RoomBroadcaster {
         }
 
         for (WebSocketSession session : sessions) {
-            send(session, serialize(snapshotForSession(room, session)));
+            RoomSnapshot personalized = snapshotForSession(room, session);
+            if (personalized != null) {
+                send(session, serialize(personalized));
+            }
         }
     }
 
@@ -88,7 +91,9 @@ public class RoomBroadcaster {
             } catch (RoomException ignored) {
             }
         }
-        return fallback;
+        // Never fall back to the acting player's snapshot: it contains their private hand.
+        close(session);
+        return null;
     }
 
     private String serialize(RoomSnapshot room) {

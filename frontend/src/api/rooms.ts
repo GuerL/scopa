@@ -48,6 +48,15 @@ export type ScopaRoundResult = {
   lines: ScopaScoreLine[];
 };
 
+export type ScopaLastMove = {
+  playerId: string;
+  playerDisplayName: string;
+  playedCard: ScopaCard;
+  capturedCards: ScopaCard[];
+  scopa: boolean;
+  sequence: number;
+};
+
 export type ScopaGameSnapshot = {
   status: 'ACTIVE' | 'ROUND_FINISHED' | 'MATCH_FINISHED';
   roundNumber: number;
@@ -62,6 +71,7 @@ export type ScopaGameSnapshot = {
   deckRemaining: number;
   roundResult: ScopaRoundResult | null;
   lastEvent: string | null;
+  lastMove: ScopaLastMove | null;
 };
 
 export type RoomSnapshot = {

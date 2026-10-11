@@ -9,7 +9,7 @@ type PlayerHeaderProps = {
 
 export function PlayerHeader({ connected, gamePlayer, player }: PlayerHeaderProps) {
   return (
-    <header className={`game-top ${connected ? 'is-online' : 'is-away'}`}>
+    <header data-player-id={player?.playerId} className={`game-top ${connected ? 'is-online' : 'is-away'}`}>
       <div>
         <p className="eyebrow">Opponent</p>
         <h2>{player?.displayName ?? 'Waiting'}</h2>

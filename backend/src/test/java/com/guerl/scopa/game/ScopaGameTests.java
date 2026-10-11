@@ -92,6 +92,11 @@ class ScopaGameTests {
         ));
 
         assertThat(after.game().tableCards()).extracting(ScopaCard::id).contains(played.id());
+        assertThat(after.game().lastMove().playedCard()).isEqualTo(played);
+        assertThat(after.game().lastMove().capturedCards()).isEmpty();
+        assertThat(after.game().lastMove().scopa()).isFalse();
+        assertThat(after.game().lastMove().sequence()).isEqualTo(1);
+        assertThat(after.game().lastMove().playerId()).isEqualTo(started.host.playerId());
     }
 
     @Test
@@ -106,6 +111,9 @@ class ScopaGameTests {
                 started.host.playerId(), started.host.sessionToken(), "H1", List.of("T1")
         ));
 
+        assertThat(after.game().lastMove().scopa()).isTrue();
+        assertThat(after.game().lastMove().capturedCards()).containsExactly(card("T1", ScopaSuit.CUPS, 7));
+        assertThat(after.game().lastMove().playedCard()).isEqualTo(card("H1", ScopaSuit.GOLD, 7));
         assertThat(after.game().tableCards()).isEmpty();
         assertThat(after.game().players().stream()
                 .filter(player -> player.playerId().equals(started.host.playerId()))
@@ -392,6 +400,28 @@ class ScopaGameTests {
         assertThat(snapshot.game().players()).allSatisfy(player -> assertThat(player.handCount()).isZero());
     }
 
+    @Test
+    void captureMoveIsPublicImmutableAndDoesNotExposeRemainingHand() throws Exception {
+        StartedGame started = startedGame(deck(
+                card("H1", ScopaSuit.GOLD, 7), card("SECRET-H2", ScopaSuit.CUPS, 10), card("SECRET-H3", ScopaSuit.SWORDS, 10),
+                card("G1", ScopaSuit.GOLD, 9), card("G2", ScopaSuit.CUPS, 9), card("G3", ScopaSuit.SWORDS, 9),
+                card("T5", ScopaSuit.CUPS, 5), card("T2", ScopaSuit.SWORDS, 2), card("T4", ScopaSuit.CLUBS, 4)
+        ), false);
+        RoomSnapshot after = started.service.playCard(started.roomCode, new PlayCardRequest(
+                started.host.playerId(), started.host.sessionToken(), "H1", List.of("T5", "T2")));
+        ScopaLastMove move = after.game().lastMove();
+        assertThat(move.capturedCards()).containsExactly(card("T5", ScopaSuit.CUPS, 5), card("T2", ScopaSuit.SWORDS, 2));
+        assertThat(move.scopa()).isFalse();
+        RoomSnapshot guest = started.service.snapshotForPlayer(started.roomCode, started.guest.playerId(), started.guest.sessionToken());
+        assertThat(guest.game().lastMove()).isEqualTo(move);
+        String json = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(guest.game());
+        assertThat(json).doesNotContain("SECRET-H2", "SECRET-H3", "sessionToken");
+        assertThatThrownBy(() -> move.capturedCards().clear()).isInstanceOf(UnsupportedOperationException.class);
+        started.service.playCard(started.roomCode, new PlayCardRequest(
+                started.guest.playerId(), started.guest.sessionToken(), "G1", List.of()));
+        assertThat(move.capturedCards()).hasSize(2);
+    }
+
     private StartedGame startedGame(List<ScopaCard> deck) {
         return startedGame(deck, true);
     }
@@ -463,6 +493,10 @@ class ScopaGameTests {
             ScopaCard card = currentView.game().hand().getFirst();
             snapshot = started.service.playCard(started.roomCode,
                     new PlayCardRequest(expected.playerId(), expected.sessionToken(), card.id(), List.of()));
+            assertThat(snapshot.game().lastMove().playerId()).isEqualTo(expected.playerId());
+            assertThat(snapshot.game().lastMove().playerDisplayName()).isEqualTo("Player " + (i + 1));
+            assertThat(snapshot.game().lastMove().sequence()).isEqualTo(i + 1);
+            assertThat(snapshot.game().lastMove().playedCard()).isEqualTo(card);
         }
         assertThat(snapshot.game().currentPlayerId()).isEqualTo(started.players.getFirst().playerId());
     }
