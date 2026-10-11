@@ -16,7 +16,9 @@ public record ScopaGameSnapshot(
         int deckRemaining,
         ScopaRoundResult roundResult,
         String lastEvent,
-        ScopaLastMove lastMove
+        ScopaLastMove lastMove,
+        List<ScopaCard> capturedCards,
+        long moveSequence
 ) {
 
     public static ScopaGameSnapshot forPlayer(ScopaGameState game, String viewerPlayerId, ScopaRules rules) {
@@ -45,7 +47,9 @@ public record ScopaGameSnapshot(
                 game.getDeck().size(),
                 game.getRoundResult(),
                 game.getLastEvent(),
-                game.getLastMove()
+                game.getLastMove(),
+                viewer == null ? List.of() : List.copyOf(viewer.getCapturedCards()),
+                game.getMoveSequence()
         );
     }
 }

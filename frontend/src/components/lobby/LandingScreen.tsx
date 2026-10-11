@@ -9,6 +9,7 @@ type LandingScreenProps = {
   displayName: string;
   error: string;
   joinCode: string;
+  reservedRoomCode?: string;
   onCreate: (event: FormEvent<HTMLFormElement>) => void;
   onDisplayNameChange: (name: string) => void;
   onJoin: (event: FormEvent<HTMLFormElement>) => void;
@@ -22,6 +23,7 @@ export function LandingScreen({
   displayName,
   error,
   joinCode,
+  reservedRoomCode,
   onCreate,
   onDisplayNameChange,
   onJoin,
@@ -47,6 +49,7 @@ export function LandingScreen({
         </div>
 
         {error && <p className="error">{error}</p>}
+        {reservedRoomCode && <p role="status">Your seat in room <strong>{reservedRoomCode}</strong> is reserved. Enter that code to rejoin with your saved player session.</p>}
         {backendStatus === 'offline' && backendMessage && <p className="error">{backendMessage}</p>}
 
         <div className="identity-panel">

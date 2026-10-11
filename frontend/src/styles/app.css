@@ -1201,3 +1201,28 @@ button.leave-game-confirm:hover:not(:disabled) {
     flex-direction: column;
   }
 }
+
+.pause-game-dialog ul {
+  margin: -12px 0 24px;
+  padding-left: 24px;
+}
+
+.pause-room-code {
+  text-align: center;
+}
+
+.pause-room-code strong {
+  display: block;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  margin-top: 8px;
+}
+
+.pause-rejoin-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pause-game-actions {
+  flex-direction: column;
+}

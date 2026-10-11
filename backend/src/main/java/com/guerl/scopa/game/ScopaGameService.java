@@ -39,7 +39,7 @@ public class ScopaGameService {
     public RoomSnapshot startMatch(String roomCode, String playerId, String sessionToken) {
         return roomService.withAuthorizedRoom(roomCode, playerId, sessionToken, (room, player) -> {
             requireHost(room, player);
-            if (room.getGame() != null && room.getGame().getStatus() == ScopaGameStatus.ACTIVE) {
+            if (room.getGame() != null) {
                 throw new RoomException("Game already started");
             }
             if (room.getPlayers().size() < Room.MIN_PLAYERS) {
@@ -48,6 +48,7 @@ public class ScopaGameService {
             if (room.getPlayers().stream().anyMatch(candidate -> !candidate.isReady())) {
                 throw new RoomException("All players must be ready");
             }
+            requireAllConnected(room);
 
             List<String> playerOrder = playerOrder(room);
             ScopaGameState game = new ScopaGameState();
@@ -83,6 +84,7 @@ public class ScopaGameService {
             if (game.getStatus() != ScopaGameStatus.ACTIVE) {
                 throw new RoomException("Match is not active");
             }
+            requireAllConnected(room);
             if (!player.getPlayerId().equals(game.getCurrentPlayerId())) {
                 throw new RoomException("It is not your turn");
             }
@@ -132,6 +134,7 @@ public class ScopaGameService {
             if (game.getStatus() != ScopaGameStatus.ROUND_FINISHED) {
                 throw new RoomException("Round is not finished");
             }
+            requireAllConnected(room);
             game.getPlayers().get(player.getPlayerId()).setRoundAcknowledged(true);
             if (game.getPlayers().values().stream().allMatch(ScopaPlayerState::isRoundAcknowledged)) {
                 List<String> order = playerOrder(room);
@@ -148,6 +151,7 @@ public class ScopaGameService {
             if (game.getStatus() != ScopaGameStatus.MATCH_FINISHED) {
                 throw new RoomException("Match is not finished");
             }
+            requireAllConnected(room);
             game.getPlayers().get(player.getPlayerId()).setRematchRequested(true);
             if (game.getPlayers().values().stream().allMatch(ScopaPlayerState::isRematchRequested)) {
                 List<String> order = playerOrder(room);
@@ -165,6 +169,44 @@ public class ScopaGameService {
     public RoomSnapshot snapshotForPlayer(String roomCode, String playerId, String sessionToken) {
         return roomService.withAuthorizedRoom(roomCode, playerId, sessionToken,
                 (room, player) -> RoomSnapshot.from(room, player.getPlayerId(), rules));
+    }
+
+    public RoomSnapshot resumeMatch(String roomCode, String playerId, String sessionToken) {
+        return roomService.withAuthorizedRoom(roomCode, playerId, sessionToken, (room, player) -> {
+            requireHost(room, player);
+            ScopaGameState game = requireGame(room);
+            if (game.getStatus() != ScopaGameStatus.PAUSED) {
+                throw new RoomException("Match is not paused");
+            }
+            requireAllConnected(room);
+            // No round setup, dealing, scoring, turn advancement, or move event.
+            game.resume();
+            room.setStatus(RoomStatus.IN_GAME);
+            return RoomSnapshot.from(room, player.getPlayerId(), rules);
+        });
+    }
+
+    public RoomSnapshot endPausedMatch(String roomCode, String playerId, String sessionToken) {
+        return roomService.withAuthorizedRoom(roomCode, playerId, sessionToken, (room, player) -> {
+            requireHost(room, player);
+            if (requireGame(room).getStatus() != ScopaGameStatus.PAUSED) {
+                throw new RoomException("Only a paused match can be ended");
+            }
+            if (!player.isConnected()) {
+                throw new RoomException("Rejoin before ending the match");
+            }
+            // Abandon the unfinished game without scoring it or declaring a winner.
+            room.setGame(null);
+            room.setStatus(RoomStatus.LOBBY);
+            for (Player candidate : room.getPlayers()) {
+                if (!candidate.isConnected()) {
+                    room.removePlayer(candidate.getPlayerId());
+                } else {
+                    candidate.setReady(false);
+                }
+            }
+            return RoomSnapshot.from(room, player.getPlayerId(), rules);
+        });
     }
 
     ScopaRules rules() {
@@ -310,6 +352,12 @@ public class ScopaGameService {
     private void requireHost(Room room, Player player) {
         if (!room.getHostPlayerId().equals(player.getPlayerId())) {
             throw new RoomException("Only the host can do that");
+        }
+    }
+
+    private void requireAllConnected(Room room) {
+        if (room.getPlayers().stream().anyMatch(player -> !player.isConnected())) {
+            throw new RoomException("Waiting for all players to return");
         }
     }
 

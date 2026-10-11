@@ -42,7 +42,7 @@ public class RoomController {
 
     @PostMapping("/{roomCode}/join")
     public RoomSessionResponse join(@PathVariable String roomCode, @RequestBody JoinRoomRequest request) {
-        RoomSessionResponse response = roomService.joinRoom(roomCode, request.displayName());
+        RoomSessionResponse response = roomService.joinRoom(roomCode, request.displayName(), request.playerId(), request.sessionToken());
         roomBroadcaster.broadcast(response.room());
         return response;
     }
@@ -100,6 +100,20 @@ public class RoomController {
     @PostMapping("/{roomCode}/game/rematch")
     public RoomSnapshot rematch(@PathVariable String roomCode, @RequestBody PlayerActionRequest request) {
         RoomSnapshot room = scopaGameService.requestRematch(roomCode, request.playerId(), request.sessionToken());
+        roomBroadcaster.broadcast(room);
+        return room;
+    }
+
+    @PostMapping("/{roomCode}/game/resume")
+    public RoomSnapshot resume(@PathVariable String roomCode, @RequestBody PlayerActionRequest request) {
+        RoomSnapshot room = scopaGameService.resumeMatch(roomCode, request.playerId(), request.sessionToken());
+        roomBroadcaster.broadcast(room);
+        return room;
+    }
+
+    @PostMapping("/{roomCode}/game/end")
+    public RoomSnapshot end(@PathVariable String roomCode, @RequestBody PlayerActionRequest request) {
+        RoomSnapshot room = scopaGameService.endPausedMatch(roomCode, request.playerId(), request.sessionToken());
         roomBroadcaster.broadcast(room);
         return room;
     }

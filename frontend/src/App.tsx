@@ -1,20 +1,23 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getHealth, type HealthResponse } from './api/health';
 import {
   createRoom,
+  ApiError,
+  endGame,
   getGameRoom,
-  getRoom,
   joinRoom,
   leaveRoom,
   nextRound,
   playCard,
   rematch,
+  resumeGame,
   setReady,
   startGame,
   type RoomSession,
   type RoomSnapshot,
 } from './api/rooms';
 import { LeaveGameDialog } from './components/LeaveGameDialog';
+import { PauseGameDialog } from './components/PauseGameDialog';
 import { GameScreen } from './components/game/GameScreen';
 import { LandingScreen } from './components/lobby/LandingScreen';
 import { LobbyScreen } from './components/lobby/LobbyScreen';
@@ -23,6 +26,7 @@ import './styles/app.css';
 
 const SESSION_STORAGE_KEY = 'scopa.roomSession';
 const DISPLAY_NAME_STORAGE_KEY = 'scopa.displayName';
+const RESERVED_SESSIONS_STORAGE_KEY = 'scopa.reservedSessions';
 
 type BackendState =
   | { status: 'checking' }
@@ -39,8 +43,11 @@ function App() {
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const leaveInFlight = useRef(false);
   const leaveTrigger = useRef<HTMLElement | null>(null);
+  const lifecycleInFlight = useRef(false);
+  const liveSnapshotReceived = useRef(false);
+  const [rejoined, setRejoined] = useState(() => Boolean(loadSavedSession() || lastReservedSession()));
   const [backend, setBackend] = useState<BackendState>({ status: 'checking' });
-  const [session, setSession] = useState<SavedSession | null>(() => loadSavedSession());
+  const [session, setSession] = useState<SavedSession | null>(() => loadSavedSession() ?? lastReservedSession());
   const [room, setRoom] = useState<RoomSnapshot | null>(null);
   const [displayName, setDisplayName] = useState(() => loadSavedDisplayName());
   const [joinCode, setJoinCode] = useState('');
@@ -80,15 +87,32 @@ function App() {
     }
 
     saveSession(session);
+    liveSnapshotReceived.current = false;
+    let cancelled = false;
     getGameRoom(session.roomCode, session.playerId, session.sessionToken)
-      .then(setRoom)
-      .catch(() => getRoom(session.roomCode).then(setRoom))
+      .then(snapshot => { if (!cancelled && !liveSnapshotReceived.current) setRoom(snapshot); })
       .catch((unknownError: unknown) => {
+        if (cancelled) return;
         setError(errorMessage(unknownError));
-        clearSavedSession();
-        setSession(null);
+        // A network failure must not erase a reserved seat's credentials.
+        if (unknownError instanceof ApiError && [400, 404].includes(unknownError.status)) {
+          clearSavedSession();
+          forgetReservedSession(session.roomCode);
+          setSession(null);
+        }
       });
+    return () => { cancelled = true; };
   }, [session]);
+
+  useEffect(() => {
+    if (!session || !room) return;
+    if (room.game && room.game.status !== 'MATCH_FINISHED') {
+      rememberReservedSession(session);
+    } else {
+      forgetReservedSession(session.roomCode);
+    }
+    if (room.game?.status !== 'PAUSED') setRejoined(false);
+  }, [session, room?.game?.status]);
 
   useEffect(() => {
     if (!session) {
@@ -96,17 +120,39 @@ function App() {
       return;
     }
 
-    setSocketState('connecting');
-    const socket = createScopaSocket(session.roomCode, session.playerId, session.sessionToken);
+    let disposed = false;
+    let socket: WebSocket | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined;
 
-    socket.addEventListener('open', () => setSocketState('live'));
-    socket.addEventListener('message', (event: MessageEvent<string>) => {
-      setRoom(JSON.parse(event.data) as RoomSnapshot);
-    });
-    socket.addEventListener('close', () => setSocketState('offline'));
-    socket.addEventListener('error', () => setSocketState('offline'));
+    function connect() {
+      if (disposed || !session || leaveInFlight.current) return;
+      setSocketState('connecting');
+      socket = createScopaSocket(session.roomCode, session.playerId, session.sessionToken);
+      socket.addEventListener('message', (event: MessageEvent<string>) => {
+        if (!disposed) {
+          liveSnapshotReceived.current = true;
+          setRoom(JSON.parse(event.data) as RoomSnapshot);
+          setSocketState('live');
+        }
+      });
+      socket.addEventListener('close', (event: CloseEvent) => {
+        if (disposed) return;
+        setSocketState('offline');
+        setRejoined(true);
+        // Invalid sessions need a new identity, rather than an endless retry.
+        if (event.code !== 1003 && !leaveInFlight.current) retry = setTimeout(connect, 1500);
+      });
+      socket.addEventListener('error', () => {
+        if (!disposed) setSocketState('offline');
+      });
+    }
 
-    return () => socket.close();
+    connect();
+    return () => {
+      disposed = true;
+      clearTimeout(retry);
+      socket?.close();
+    };
   }, [session]);
 
   useEffect(() => {
@@ -130,7 +176,19 @@ function App() {
   async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await runAction('join', async () => {
-      enterRoom(await joinRoom(joinCode.trim().toUpperCase(), displayName.trim()));
+      const code = joinCode.trim().toUpperCase();
+      const identity = loadReservedSessions()[code];
+      let response: RoomSession;
+      try {
+        response = await joinRoom(code, displayName.trim(), identity);
+      } catch (unknownError) {
+        if (identity && unknownError instanceof ApiError && [400, 404].includes(unknownError.status)) {
+          forgetReservedSession(code);
+        }
+        throw unknownError;
+      }
+      setRejoined(Boolean(identity && response.room.game));
+      enterRoom(response);
     });
   }
 
@@ -186,8 +244,10 @@ function App() {
     });
   }
 
-  function requestLeave() {
-    leaveTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  function requestLeave(event?: MouseEvent<HTMLButtonElement>) {
+    if (leaveInFlight.current) return;
+    leaveTrigger.current = event?.currentTarget
+      ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setLeaveDialogOpen(true);
   }
 
@@ -214,11 +274,31 @@ function App() {
 
     await runAction('leave', async () => {
       await leaveRoom(session.roomCode, session.playerId, session.sessionToken);
+      if (room?.game && room.game.status !== 'MATCH_FINISHED') {
+        rememberReservedSession(session);
+        setJoinCode(session.roomCode);
+      } else {
+        forgetReservedSession(session.roomCode);
+      }
       clearSavedSession();
       setSession(null);
       setRoom(null);
       setSocketState('idle');
     });
+  }
+
+  async function handleLifecycle(action: 'resume' | 'end') {
+    if (!session || lifecycleInFlight.current) return;
+    lifecycleInFlight.current = true;
+    try {
+      await runAction(action, async () => {
+        const handler = action === 'resume' ? resumeGame : endGame;
+        setRoom(await handler(session.roomCode, session.playerId, session.sessionToken));
+        setRejoined(false);
+      });
+    } finally {
+      lifecycleInFlight.current = false;
+    }
   }
 
   async function copyRoomCode() {
@@ -252,13 +332,15 @@ function App() {
 
   const leaveDialog = leaveDialogOpen && session && room ? (
     <LeaveGameDialog
-      active={room.game?.status === 'ACTIVE'}
+      active={Boolean(room.game && room.game.status !== 'MATCH_FINISHED')}
       onCancel={cancelLeave}
       onConfirm={confirmLeave}
     />
   ) : null;
 
   if (session && room?.game) {
+    const paused = room.game.status === 'PAUSED'
+      || (socketState !== 'live' && room.game.status !== 'MATCH_FINISHED');
     return (
       <>
         <GameScreen
@@ -278,6 +360,18 @@ function App() {
           setSelectedTableCardIds={setSelectedTableCardIds}
           socketState={socketState}
         />
+        {paused && <PauseGameDialog
+          roomCode={room.roomCode}
+          players={room.players}
+          host={room.hostPlayerId === session.playerId}
+          rejoined={rejoined}
+          online={socketState === 'live'}
+          busyAction={busyAction}
+          error={error}
+          onResume={() => handleLifecycle('resume')}
+          onEnd={() => handleLifecycle('end')}
+          onLeave={requestLeave}
+        />}
         {leaveDialog}
       </>
     );
@@ -312,6 +406,7 @@ function App() {
       displayName={displayName}
       error={error}
       joinCode={joinCode}
+      reservedRoomCode={lastReservedSession()?.roomCode}
       onCreate={handleCreate}
       onDisplayNameChange={setDisplayName}
       onJoin={handleJoin}
@@ -340,6 +435,31 @@ function saveSession(session: SavedSession) {
 
 function clearSavedSession() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+function loadReservedSessions(): Record<string, SavedSession> {
+  try {
+    const value = JSON.parse(localStorage.getItem(RESERVED_SESSIONS_STORAGE_KEY) ?? '{}');
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function lastReservedSession(): SavedSession | null {
+  return Object.values(loadReservedSessions()).at(-1) ?? null;
+}
+
+function rememberReservedSession(session: SavedSession) {
+  const saved = loadReservedSessions();
+  saved[session.roomCode] = session;
+  localStorage.setItem(RESERVED_SESSIONS_STORAGE_KEY, JSON.stringify(saved));
+}
+
+function forgetReservedSession(roomCode: string) {
+  const saved = loadReservedSessions();
+  delete saved[roomCode];
+  localStorage.setItem(RESERVED_SESSIONS_STORAGE_KEY, JSON.stringify(saved));
 }
 
 function loadSavedDisplayName(): string {

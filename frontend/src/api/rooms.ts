@@ -58,7 +58,7 @@ export type ScopaLastMove = {
 };
 
 export type ScopaGameSnapshot = {
-  status: 'ACTIVE' | 'ROUND_FINISHED' | 'MATCH_FINISHED';
+  status: 'ACTIVE' | 'PAUSED' | 'ROUND_FINISHED' | 'MATCH_FINISHED';
   roundNumber: number;
   tableCards: ScopaCard[];
   hand: ScopaCard[];
@@ -72,6 +72,8 @@ export type ScopaGameSnapshot = {
   roundResult: ScopaRoundResult | null;
   lastEvent: string | null;
   lastMove: ScopaLastMove | null;
+  capturedCards: ScopaCard[];
+  moveSequence: number;
 };
 
 export type RoomSnapshot = {
@@ -79,7 +81,7 @@ export type RoomSnapshot = {
   hostPlayerId: string;
   players: PlayerSnapshot[];
   createdAt: string;
-  status: 'LOBBY' | 'IN_GAME' | 'MATCH_FINISHED';
+  status: 'LOBBY' | 'IN_GAME' | 'PAUSED' | 'MATCH_FINISHED';
   game: ScopaGameSnapshot | null;
 };
 
@@ -101,10 +103,14 @@ export async function createRoom(displayName: string): Promise<RoomSession> {
   });
 }
 
-export async function joinRoom(roomCode: string, displayName: string): Promise<RoomSession> {
+export async function joinRoom(
+  roomCode: string,
+  displayName: string,
+  identity?: { playerId: string; sessionToken: string },
+): Promise<RoomSession> {
   return request<RoomSession>(`/api/rooms/${encodeURIComponent(roomCode)}/join`, {
     method: 'POST',
-    body: JSON.stringify({ displayName }),
+    body: JSON.stringify({ displayName, playerId: identity?.playerId, sessionToken: identity?.sessionToken }),
   });
 }
 
@@ -165,6 +171,20 @@ export async function rematch(roomCode: string, playerId: string, sessionToken: 
   return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/rematch`, playerId, sessionToken);
 }
 
+export async function resumeGame(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/resume`, playerId, sessionToken);
+}
+
+export async function endGame(roomCode: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
+  return playerAction(`/api/rooms/${encodeURIComponent(roomCode)}/game/end`, playerId, sessionToken);
+}
+
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+  }
+}
+
 async function playerAction(path: string, playerId: string, sessionToken: string): Promise<RoomSnapshot> {
   return request<RoomSnapshot>(path, {
     method: 'POST',
@@ -190,7 +210,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     } catch {
       // Keep the HTTP status fallback.
     }
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
 
   return response.json() as Promise<T>;

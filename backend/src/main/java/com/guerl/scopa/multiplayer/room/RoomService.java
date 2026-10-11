@@ -1,12 +1,11 @@
 package com.guerl.scopa.multiplayer.room;
 
-import com.guerl.scopa.game.ScopaGameState;
+import com.guerl.scopa.game.ScopaRules;
 import com.guerl.scopa.game.ScopaGameStatus;
 import com.guerl.scopa.multiplayer.player.Player;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -33,11 +32,26 @@ public class RoomService {
     }
 
     public RoomSessionResponse joinRoom(String roomCode, String displayName) {
-        String normalizedRoomCode = normalizeRoomCode(roomCode);
-        String normalizedName = normalizeDisplayName(displayName);
+        return joinRoom(roomCode, displayName, null, null);
+    }
 
-        Room room = getRequiredRoom(normalizedRoomCode);
+    public RoomSessionResponse joinRoom(String roomCode, String displayName, String playerId, String sessionToken) {
+        Room room = getRequiredRoom(normalizeRoomCode(roomCode));
         synchronized (room) {
+            // Credentials reclaim the existing seat, even in a full, paused room.
+            // Display names are never used as proof of identity.
+            if (playerId != null || sessionToken != null) {
+                if (room.findPlayer(playerId).isEmpty()) {
+                    throw new RoomException("Your reserved seat is no longer available. The host may have ended the game");
+                }
+                Player player = getAuthorizedPlayer(room, playerId, sessionToken);
+                player.setConnected(true);
+                return toSessionResponse(room, player);
+            }
+            if (room.getGame() != null) {
+                throw new RoomException("Match already started. Rejoin using your original player session");
+            }
+            String normalizedName = normalizeDisplayName(displayName);
             if (room.isFull()) {
                 throw new RoomException("Room is full");
             }
@@ -71,14 +85,19 @@ public class RoomService {
         String normalizedRoomCode = normalizeRoomCode(roomCode);
         Room room = getRequiredRoom(normalizedRoomCode);
         synchronized (room) {
-            getAuthorizedPlayer(room, playerId, sessionToken);
-            List<String> previousOrder = room.getPlayers().stream().map(Player::getPlayerId).toList();
+            Player player = getAuthorizedPlayer(room, playerId, sessionToken);
+            if (hasUnfinishedMatch(room)) {
+                markUnavailable(room, player);
+                return Optional.of(RoomSnapshot.from(room));
+            }
             room.removePlayer(playerId);
+            if (room.getGame() != null) {
+                room.getGame().getPlayers().remove(playerId);
+            }
             if (room.isEmpty()) {
                 rooms.remove(normalizedRoomCode);
                 return Optional.empty();
             }
-            removePlayerFromGame(room, playerId, previousOrder);
             return Optional.of(RoomSnapshot.from(room));
         }
     }
@@ -92,7 +111,11 @@ public class RoomService {
 
         synchronized (room) {
             Player player = getAuthorizedPlayer(room, playerId, sessionToken);
-            player.setConnected(connected);
+            if (connected) {
+                player.setConnected(true);
+            } else {
+                markUnavailable(room, player);
+            }
             return Optional.of(RoomSnapshot.from(room));
         }
     }
@@ -156,55 +179,20 @@ public class RoomService {
                 room.getRoomCode(),
                 player.getPlayerId(),
                 player.getSessionToken(),
-                RoomSnapshot.from(room)
+                RoomSnapshot.from(room, player.getPlayerId(), new ScopaRules())
         );
     }
 
-    private void removePlayerFromGame(Room room, String leavingPlayerId, List<String> previousOrder) {
-        ScopaGameState game = room.getGame();
-        if (game == null || game.getStatus() == ScopaGameStatus.MATCH_FINISHED) {
-            return;
-        }
-
-        game.getPlayers().remove(leavingPlayerId);
-        List<String> remainingOrder = room.getPlayers().stream().map(Player::getPlayerId).toList();
-        if (remainingOrder.size() < Room.MIN_PLAYERS) {
-            finishGameForWinner(room, game, remainingOrder.getFirst());
-            return;
-        }
-
-        if (leavingPlayerId.equals(game.getLastCapturingPlayerId())) {
-            game.setLastCapturingPlayerId(null);
-        }
-        if (leavingPlayerId.equals(game.getStartingPlayerId())) {
-            game.setStartingPlayerId(nextRemainingPlayer(previousOrder, remainingOrder, leavingPlayerId));
-        }
-        if (leavingPlayerId.equals(game.getCurrentPlayerId())) {
-            game.setCurrentPlayerId(nextRemainingPlayer(previousOrder, remainingOrder, leavingPlayerId));
-            game.setLastEvent("TURN_CHANGED");
-        }
+    private boolean hasUnfinishedMatch(Room room) {
+        return room.getGame() != null && room.getGame().getStatus() != ScopaGameStatus.MATCH_FINISHED;
     }
 
-    private void finishGameForWinner(Room room, ScopaGameState game, String winnerPlayerId) {
-        game.setStatus(ScopaGameStatus.MATCH_FINISHED);
-        game.setWinnerPlayerId(winnerPlayerId);
-        game.setCurrentPlayerId(null);
-        game.setLastEvent("GAME_FINISHED");
-        room.setStatus(RoomStatus.MATCH_FINISHED);
-    }
-
-    private String nextRemainingPlayer(List<String> previousOrder, List<String> remainingOrder, String playerId) {
-        int start = previousOrder.indexOf(playerId);
-        if (start < 0) {
-            return remainingOrder.getFirst();
+    private void markUnavailable(Room room, Player player) {
+        player.setConnected(false);
+        if (hasUnfinishedMatch(room)) {
+            room.getGame().pause();
+            room.setStatus(RoomStatus.PAUSED);
         }
-        for (int offset = 1; offset <= previousOrder.size(); offset++) {
-            String candidate = previousOrder.get((start + offset) % previousOrder.size());
-            if (remainingOrder.contains(candidate)) {
-                return candidate;
-            }
-        }
-        return remainingOrder.getFirst();
     }
 
     private String normalizeDisplayName(String displayName) {

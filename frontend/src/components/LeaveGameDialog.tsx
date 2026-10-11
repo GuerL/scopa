@@ -9,6 +9,12 @@ type LeaveGameDialogProps = {
 export function LeaveGameDialog({ active, onCancel, onConfirm }: LeaveGameDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
 
+  function cancel() {
+    // Close first so the Leave button is no longer inert when focus returns to it.
+    dialog.current?.close();
+    onCancel();
+  }
+
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -25,16 +31,16 @@ export function LeaveGameDialog({ active, onCancel, onConfirm }: LeaveGameDialog
       aria-describedby="leave-game-message"
       onCancel={(event) => {
         event.preventDefault();
-        onCancel();
+        cancel();
       }}
     >
       <h2 id="leave-game-title">Leave game?</h2>
       <p id="leave-game-message">
         Are you sure you want to leave this game?
-        {active && <><br />You may not be able to rejoin the current match.</>}
+        {active && <><br />The game will pause. Your seat and cards will be saved so you can rejoin.</>}
       </p>
       <div className="leave-game-dialog-actions">
-        <button className="secondary" type="button" autoFocus onClick={onCancel}>Cancel</button>
+        <button className="secondary" type="button" autoFocus onClick={cancel}>Cancel</button>
         <button className="leave-game-confirm" type="button" onClick={onConfirm}>Leave game</button>
       </div>
     </dialog>

@@ -8,6 +8,7 @@ import java.util.Map;
 public class ScopaGameState {
 
     private ScopaGameStatus status = ScopaGameStatus.ACTIVE;
+    private ScopaGameStatus pausedFromStatus;
     private int roundNumber = 1;
     private final List<ScopaCard> deck = new ArrayList<>();
     private final List<ScopaCard> tableCards = new ArrayList<>();
@@ -23,6 +24,8 @@ public class ScopaGameState {
 
     public ScopaLastMove getLastMove() { return lastMove; }
 
+    public long getMoveSequence() { return moveSequence; }
+
     public void recordMove(String playerId, String displayName, ScopaCard playedCard,
                            List<ScopaCard> capturedCards, boolean scopa) {
         lastMove = new ScopaLastMove(playerId, displayName, playedCard, capturedCards, scopa, ++moveSequence);
@@ -37,6 +40,20 @@ public class ScopaGameState {
 
     public void setStatus(ScopaGameStatus status) {
         this.status = status;
+    }
+
+    public void pause() {
+        if (status == ScopaGameStatus.ACTIVE || status == ScopaGameStatus.ROUND_FINISHED) {
+            pausedFromStatus = status;
+            status = ScopaGameStatus.PAUSED;
+        }
+    }
+
+    public void resume() {
+        if (status == ScopaGameStatus.PAUSED) {
+            status = pausedFromStatus;
+            pausedFromStatus = null;
+        }
     }
 
     public int getRoundNumber() {

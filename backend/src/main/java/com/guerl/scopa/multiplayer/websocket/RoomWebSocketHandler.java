@@ -41,17 +41,17 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
         String sessionToken = queryParam(uri, "sessionToken");
 
         try {
-            Optional<RoomSnapshot> room = roomService.markConnected(roomCode, playerId, sessionToken, true);
-            if (room.isEmpty()) {
-                session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Room not found"));
-                return;
-            }
-
-            session.getAttributes().put(ROOM_CODE_ATTRIBUTE, roomCode.toUpperCase());
-            session.getAttributes().put(PLAYER_ID_ATTRIBUTE, playerId);
-            session.getAttributes().put(SESSION_TOKEN_ATTRIBUTE, sessionToken);
-            roomBroadcaster.register(roomCode.toUpperCase(), session);
-            roomBroadcaster.broadcast(room.get());
+            // Register and update presence under the room lock. A closing old tab
+            // must not mark a newly connected replacement tab unavailable.
+            RoomSnapshot room = roomService.withAuthorizedRoom(roomCode, playerId, sessionToken, (current, player) -> {
+                session.getAttributes().put(ROOM_CODE_ATTRIBUTE, current.getRoomCode());
+                session.getAttributes().put(PLAYER_ID_ATTRIBUTE, playerId);
+                session.getAttributes().put(SESSION_TOKEN_ATTRIBUTE, sessionToken);
+                roomBroadcaster.register(current.getRoomCode(), session);
+                player.setConnected(true);
+                return RoomSnapshot.from(current);
+            });
+            roomBroadcaster.broadcast(room);
         } catch (RoomException exception) {
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason(exception.getMessage()));
         }
@@ -76,18 +76,21 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        roomBroadcaster.unregister(roomCode, session);
-
         if (!roomService.roomExists(roomCode)) {
+            roomBroadcaster.unregister(roomCode, session);
             return;
         }
 
         try {
-            if (!roomBroadcaster.hasOpenPlayerSession(roomCode, playerId)) {
-                roomService.markConnected(roomCode, playerId, sessionToken, false)
-                        .ifPresent(roomBroadcaster::broadcast);
-            }
+            Optional<RoomSnapshot> changed = roomService.withAuthorizedRoom(roomCode, playerId, sessionToken, (room, player) -> {
+                roomBroadcaster.unregister(roomCode, session);
+                return roomBroadcaster.hasOpenPlayerSession(roomCode, playerId)
+                        ? Optional.empty()
+                        : roomService.markConnected(roomCode, playerId, sessionToken, false);
+            });
+            changed.ifPresent(roomBroadcaster::broadcast);
         } catch (RoomException ignored) {
+            roomBroadcaster.unregister(roomCode, session);
         }
     }
 
