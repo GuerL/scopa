@@ -34,10 +34,12 @@ export function LandingScreen({
   return (
     <main className="app-shell landing-shell">
       <section className="landing" aria-labelledby="app-title">
-        <div className="brand-mark" aria-hidden="true">qvb.</div>
-        <p className="eyebrow">Gioco italiano</p>
-        <h1 id="app-title">Scopa Online</h1>
-        <p className="subtitle">The Italian card game. A table with friends.</p>
+        <header className="landing-branding">
+          <img className="landing-logo" src="/qvb-logo.svg" alt="qvb." width="56" height="36" />
+          <p className="landing-category">Gioco italiano</p>
+          <h1 id="app-title">Scopa <span className="title-word">Online<span className="title-dot">.</span></span></h1>
+          <p className="landing-description">The Italian card game. A table with friends.</p>
+        </header>
 
         <div className="connection-line" role="status">
           <span className={`signal signal-${backendStatus}`} aria-hidden="true" />
