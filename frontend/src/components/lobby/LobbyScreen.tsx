@@ -53,8 +53,8 @@ export function LobbyScreen({
                 <strong>{player.displayName}</strong>
                 <div className="badges">
                   {player.host && <span>Host</span>}
-                  <span>{player.ready ? 'Ready' : 'Not ready'}</span>
-                  <span>{player.connected ? 'Online' : 'Away'}</span>
+                  <span className="ready-badge">{player.ready ? 'Ready' : 'Not ready'}</span>
+                  <span className={player.connected ? 'online-badge' : undefined}>{player.connected ? 'Online' : 'Away'}</span>
                 </div>
               </div>
               {player.playerId === currentPlayer?.playerId && <span className="you">You</span>}
@@ -65,7 +65,7 @@ export function LobbyScreen({
         {error && <p className="error">{error}</p>}
 
         <div className="actions lobby-actions">
-          <button type="button" onClick={onReady} disabled={busyAction === 'ready'}>
+          <button className={currentPlayer?.host ? 'secondary' : undefined} type="button" onClick={onReady} disabled={busyAction === 'ready'}>
             {currentPlayer?.ready ? 'Not ready' : 'Ready'}
           </button>
           {currentPlayer?.host && (

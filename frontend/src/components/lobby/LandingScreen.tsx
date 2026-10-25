@@ -34,14 +34,10 @@ export function LandingScreen({
   return (
     <main className="app-shell landing-shell">
       <section className="landing" aria-labelledby="app-title">
-        <div className="brand-mark" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
+        <div className="brand-mark" aria-hidden="true">qvb.</div>
         <p className="eyebrow">Gioco italiano</p>
-        <h1 id="app-title">Scopa</h1>
-        <p className="subtitle">A warm, mutiplayer tactical card game.</p>
+        <h1 id="app-title">Scopa Online</h1>
+        <p className="subtitle">The Italian card game. A table with friends.</p>
 
         <div className="connection-line" role="status">
           <span className={`signal signal-${backendStatus}`} aria-hidden="true" />
@@ -67,7 +63,7 @@ export function LandingScreen({
         <div className="landing-actions">
           <form className="create-flow" onSubmit={onCreate}>
             <button type="submit" disabled={!canSubmit || busyAction === 'create'}>
-              Create game
+              Create Room
             </button>
           </form>
 
@@ -83,8 +79,8 @@ export function LandingScreen({
                 required
                 value={joinCode}
               />
-              <button type="submit" disabled={!canSubmit || busyAction === 'join'}>
-                Join
+              <button className="secondary" type="submit" disabled={!canSubmit || busyAction === 'join'}>
+                Join Room
               </button>
             </div>
           </form>

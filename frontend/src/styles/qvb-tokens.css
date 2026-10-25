@@ -1,0 +1,46 @@
+/* qvb. palette and typography from the cached portfolio stylesheet.
+   Interface and game materials deliberately have separate semantic tokens. */
+:root {
+  color-scheme: dark;
+  --background: #0b0d12;
+  --surface: #151720;
+  --surface-raised: #1c1e29;
+  --surface-hover: #282b38;
+  --text-primary: #e9eaf0;
+  --text-secondary: #a6acba;
+  --text-subtle: #969dae;
+  --accent: #a09aff;
+  --accent-hover: #b5b0ff;
+  --on-accent: #151323;
+  --accent-soft: #a09aff18;
+  --accent-glow: #49457320;
+  --border: #343744;
+  --separator: #ffffff0d;
+  --success: #98bba1;
+  --warning: #e6c779;
+  --danger: #f0989d;
+  --danger-hover: #ffb1b5;
+  --danger-soft: #f0989d14;
+  --on-danger: #301116;
+  --disabled-surface: #262936;
+  --disabled-text: #969dae;
+  --panel-radius: 16px;
+  --shadow-card: 0 5px 12px #00000026;
+  --shadow-lift: 0 12px 28px #00000040;
+
+  --game-surround: #101916;
+  --game-felt: #152e26;
+  --game-felt-light: #234236;
+  --game-text-secondary: #b4c7bc;
+  --game-gold: #f3d37b;
+  --game-event-surface: #c99a2e2e;
+  --game-event-border: #f3d37b5c;
+  --card-gold-paper: #f5d682;
+  --card-gold-ink: #71500d;
+  --card-swords: #253f63;
+  --card-clubs: #315b2c;
+  --card-paper: #fff9ec;
+  --card-ink: #1b1a16;
+  --card-cups: #7f2f24;
+  --card-back: #7f2f24;
+}
