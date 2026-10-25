@@ -41,18 +41,18 @@ export function LandingScreen({
           <p className="landing-description">The Italian card game. A table with friends.</p>
         </header>
 
-        <div className="connection-line" role="status">
+        <div className="connection-line" role="status" title={backendMessage}>
           <span className={`signal signal-${backendStatus}`} aria-hidden="true" />
-          {backendStatus === 'offline' ? backendMessage ?? 'Offline' : backendStatus === 'checking' ? 'Checking' : 'Online'}
+          {backendStatus === 'offline' ? 'Offline' : backendStatus === 'checking' ? 'Checking' : 'Online'}
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
         {reservedRoomCode && <p role="status">Your seat in room <strong>{reservedRoomCode}</strong> is reserved. Enter that code to rejoin with your saved player session.</p>}
-        {backendStatus === 'offline' && backendMessage && <p className="error">{backendMessage}</p>}
 
         <div className="identity-panel">
           <label htmlFor="display-name">Playing as</label>
           <input
+            autoComplete="nickname"
             id="display-name"
             maxLength={24}
             onChange={(event) => onDisplayNameChange(event.target.value)}

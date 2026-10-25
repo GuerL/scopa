@@ -1254,3 +1254,24 @@ button.leave-game-confirm:disabled { background: var(--disabled-surface); color:
   .game-top.is-online h2::before { background: var(--success); }
   .game-top .player-signal { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
 }
+
+/* Keep landing controls aligned and calm across the two games. */
+.landing input {
+  min-width: 0;
+  min-height: 52px;
+}
+.landing .join-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.landing button:active:not(:disabled) {
+  transform: none;
+}
+
+.landing-shell {
+  padding: max(18px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
+}
+.landing {
+  -webkit-font-smoothing: antialiased;
+}
