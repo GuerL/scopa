@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import type { PlayerSnapshot, ScopaCard, ScopaGameSnapshot, ScopaScoreLine } from '../api/rooms';
 import { GameScreen } from '../components/game/GameScreen';
 import { LobbyScreen } from '../components/lobby/LobbyScreen';
+import { LandingScreen } from '../components/lobby/LandingScreen';
 import { prepareScene, sceneReady } from './ready';
 import '../styles/app.css';
 
@@ -55,6 +56,11 @@ const results: ScopaGameSnapshot = { ...game, status: 'ROUND_FINISHED', tableCar
 };
 function ScreenshotDemo({ scene }: { scene: string }) {
   useEffect(() => { void sceneReady(); }, []);
+  // Both viewports use the same presentation fixture without mounting App's health/session hooks.
+  if (scene === 'landing' || scene === 'landing-mobile') return <LandingScreen backendStatus="connected"
+    busyAction={null} displayName="Sofia" error="" joinCode=""
+    onCreate={event => event.preventDefault()} onJoin={event => event.preventDefault()}
+    onDisplayNameChange={noop} onJoinCodeChange={noop} />;
   if (scene === 'lobby') return <LobbyScreen busyAction={null} currentPlayer={players[0]} error=""
     onCopyRoom={noop} onLeave={noop} onReady={noop} onStartGame={noop} players={players}
     readyToStart roomCode="SCOPA7" socketState="live" />;
@@ -65,6 +71,6 @@ function ScreenshotDemo({ scene }: { scene: string }) {
     setSelectedHandCardId={noop} setSelectedTableCardIds={noop} socketState="live" />;
 }
 export function mountScreenshotDemo() {
-  const scene = prepareScene(['gameplay', 'mobile-gameplay', 'lobby', 'results']);
+  const scene = prepareScene(['landing', 'landing-mobile', 'gameplay', 'mobile-gameplay', 'lobby', 'results']);
   createRoot(document.getElementById('root')!).render(<ScreenshotDemo scene={scene} />);
 }
