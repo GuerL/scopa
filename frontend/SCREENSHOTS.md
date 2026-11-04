@@ -1,0 +1,12 @@
+# Screenshot scenes
+
+Run `npm run dev:screenshots` from this frontend directory. No backend is needed.
+
+- http://127.0.0.1:8082/?screenshot=gameplay → cover.webp
+- http://127.0.0.1:8082/?screenshot=lobby → lobby.webp
+- http://127.0.0.1:8082/?screenshot=results → results.webp
+- http://127.0.0.1:8082/?screenshot=mobile-gameplay → mobile-gameplay.webp
+
+Wait for `#root[data-screenshot-ready="true"]` before capture. Readiness waits for image decoding, fonts, and layout frames; asset failures leave it unset. Unknown scenes show an error and never become ready. Use 1600×900 desktop and 390×844 for mobile-gameplay.
+
+Only Vite development with `--mode screenshots` enables selection. Ordinary development and all production builds ignore the query. The dynamic demo import is eliminated from production bundles, even with `vite build --mode screenshots`. Fixtures render production components without mounting the application session/socket hooks. Controls are inert, timers are fixed, animations are disabled, and no demo state is saved. Do not publish a development server.
