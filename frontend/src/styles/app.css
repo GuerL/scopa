@@ -1275,3 +1275,49 @@ button.leave-game-confirm:disabled { background: var(--disabled-surface); color:
 .landing {
   -webkit-font-smoothing: antialiased;
 }
+
+/* Static landing artwork: isolated from the table and all interaction. */
+.landing-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.landing-shell::before,
+.landing-shell::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: clamp(260px, 30vw, 480px);
+  top: 0;
+  bottom: 0;
+  background: url('/landing-cards.svg') center / contain no-repeat;
+  opacity: .32;
+  filter: blur(.35px);
+  mask-image: linear-gradient(to right, #000 55%, transparent 100%);
+}
+.landing-shell::before { left: -35px; }
+.landing-shell::after {
+  right: -35px;
+  transform: rotate(180deg);
+  opacity: .25;
+}
+.landing { position: relative; }
+@media (max-width: 1000px) {
+  .landing-shell::before, .landing-shell::after { width: 280px; opacity: .22; }
+  .landing-shell::before { left: -110px; }
+  .landing-shell::after { right: -110px; }
+}
+@media (max-width: 600px) {
+  .landing-shell::before {
+    width: 240px;
+    height: 380px;
+    top: -140px;
+    left: auto;
+    right: -95px;
+    bottom: auto;
+    opacity: .23;
+    mask-image: linear-gradient(#000, transparent);
+  }
+  .landing-shell::after { display: none; }
+}
