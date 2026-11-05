@@ -88,7 +88,7 @@ export function LandingScreen({
           </form>
         </div>
       </section>
-      <a className="landing-art-credit" href="/cards/sicilian/ATTRIBUTION.html" target="_blank" rel="noreferrer">Card artwork · Matsoftware · CC BY-SA 3.0</a>
+      <a className="landing-art-credit" href="/cards/sicilian/ATTRIBUTION.html" target="_blank" rel="noreferrer">Artwork credits</a>
     </main>
   );
 }

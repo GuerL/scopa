@@ -67,3 +67,16 @@ test('preference defaults to modern, restores traditional, and tolerates blocked
   CardStyleProvider({ persist: false }).props.value.setStyle('traditional');
   assert.equal(writes.length, 0);
 });
+
+
+test('hidden card appearance is independent of face preference', () => {
+  const render = style => load('CardBack', {
+    'react/jsx-runtime': runtime,
+    './CardStyle': { useCardStyle: () => ({ style }) },
+  }).CardBack({ index: 2 });
+  const modern = render('modern');
+  const traditional = render('traditional');
+  assert.equal(modern.props.className, traditional.props.className);
+  assert.equal(modern.props['aria-label'], 'Hidden opponent card');
+  assert.equal(modern.props.style['--card-offset'], '-12px');
+});
