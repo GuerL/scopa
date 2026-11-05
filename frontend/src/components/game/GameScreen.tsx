@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { CardStyleProvider, CardStyleSelector } from '../cards/CardStyle';
 import type { PlayerSnapshot, ScopaGameSnapshot } from '../../api/rooms';
 import { MoveAnimationLayer, moveSummary, useMoveFeedback, useBoardGeometry } from './MoveFeedback';
 import { PlayerHand } from './PlayerHand';
@@ -15,6 +16,7 @@ type SavedSession = {
 };
 
 type GameScreenProps = {
+  persistCardStyle?: boolean;
   busyAction: string | null;
   error: string;
   game: ScopaGameSnapshot;
@@ -32,7 +34,11 @@ type GameScreenProps = {
   socketState: string;
 };
 
-export function GameScreen({
+export function GameScreen(props: GameScreenProps) {
+  return <CardStyleProvider persist={props.persistCardStyle}><StyledGameScreen {...props} /></CardStyleProvider>;
+}
+
+function StyledGameScreen({
   busyAction,
   error,
   game,
@@ -154,6 +160,7 @@ export function GameScreen({
             />
           ))}
         </div>
+        <CardStyleSelector />
         <TableArea
           animatedPlayedCardId={animating && feedback && !feedback.capturedCards.length ? feedback.playedCard.id : null}
           deckRemaining={game.deckRemaining}

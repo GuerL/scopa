@@ -64,7 +64,7 @@ function ScreenshotDemo({ scene }: { scene: string }) {
   if (scene === 'lobby') return <LobbyScreen busyAction={null} currentPlayer={players[0]} error=""
     onCopyRoom={noop} onLeave={noop} onReady={noop} onStartGame={noop} players={players}
     readyToStart roomCode="SCOPA7" socketState="live" />;
-  return <GameScreen busyAction={null} error="" game={scene === 'results' ? results : game}
+  return <GameScreen persistCardStyle={false} busyAction={null} error="" game={scene === 'results' ? results : game}
     onLeave={noop} onNextRound={noop} onPlay={noop} onRematch={noop} players={players}
     roomCode="SCOPA7" selectedHandCardId={null} selectedTableCardIds={[]}
     session={{ roomCode: 'SCOPA7', playerId: players[0].playerId, sessionToken: 'demo-inert' }}

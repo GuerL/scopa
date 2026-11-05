@@ -14,3 +14,5 @@ Wait for `#root[data-screenshot-ready="true"]` before capture. Readiness waits f
 Both landing scenes reuse `LandingScreen` with the same fixed player name and connected (Online) presentation status. They do not mount the normal application's health checks or multiplayer connections. Form submissions are inert and prevent browser navigation.
 
 Only Vite development with `--mode screenshots` enables selection. Ordinary development and all production builds ignore the query. The dynamic demo import is eliminated from production bundles, even with `vite build --mode screenshots`. Fixtures render production components without mounting the application session/socket hooks. Controls are inert, timers are fixed, animations are disabled, and no demo state is saved. Do not publish a development server.
+
+The Cards selector can preview Traditional in gameplay scenes. It starts in Modern and never reads or writes the real preference in screenshot mode. The selector is the only live presentation control; game actions remain inert. Licensed artwork credits are available beside the selector and at the landing page edge.

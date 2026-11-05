@@ -388,10 +388,11 @@ input::placeholder {
   gap: var(--game-gap);
   grid-template-areas:
     "opponent"
+    "settings"
     "table"
     "status"
     "hand";
-  grid-template-rows: var(--opponent-zone) var(--table-zone) var(--feedback-zone) minmax(0, auto);
+  grid-template-rows: var(--opponent-zone) auto var(--table-zone) var(--feedback-zone) minmax(0, auto);
   margin: 0 auto;
   max-width: 760px;
   min-height: 0;
@@ -1050,7 +1051,7 @@ input::placeholder {
 
   .game-board {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--opponent-zone) var(--table-zone) var(--feedback-zone) minmax(0, auto);
+    grid-template-rows: var(--opponent-zone) auto var(--table-zone) var(--feedback-zone) minmax(0, auto);
     max-width: min(1180px, calc(100vw - 56px));
   }
 
@@ -1320,4 +1321,83 @@ button.leave-game-confirm:disabled { background: var(--disabled-surface); color:
     mask-image: linear-gradient(#000, transparent);
   }
   .landing-shell::after { display: none; }
+}
+
+/* Gameplay uses the landing palette; card faces remain independent. */
+.game-shell {
+  background:
+    radial-gradient(ellipse at 0% 20%, var(--accent-glow), transparent 52%),
+    radial-gradient(ellipse at 100% 85%, var(--accent-soft), transparent 48%),
+    var(--background);
+}
+.game-board { overflow: visible; }
+.game-top, .my-summary {
+  border: 1px solid var(--border);
+  background: linear-gradient(120deg, var(--surface-raised), var(--surface));
+  border-radius: 12px;
+}
+.game-top > div:first-child, .my-summary > div { min-width: 0; }
+.table-zone {
+  border: 1px solid #ffffff12;
+  border-radius: var(--panel-radius);
+  background:
+    radial-gradient(ellipse at 50% 35%, #203b33, #122720 70%, #101d1a),
+    var(--game-felt);
+  box-shadow: inset 0 1px 0 #ffffff06, inset 0 -18px 42px #00000024, 0 16px 40px #00000020;
+}
+.round-meta { font-variant-numeric: tabular-nums; letter-spacing: .035em; }
+.turn-context { border: 1px solid #a09aff28; color: var(--accent-hover); font-weight: 600; }
+.move-panel button { border: 1px solid var(--border); }
+.move-panel button:not(.secondary):not(:disabled) { border-color: transparent; }
+.card-style-setting {
+  grid-area: settings;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: .75rem;
+}
+.card-style-setting label { font-size: .7rem; color: var(--text-secondary); letter-spacing: .08em; }
+.card-style-setting select {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 30px 0 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.card-style-setting a { color: var(--accent); text-underline-offset: 3px; }
+.card-style-setting select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.traditional-face {
+  position: absolute;
+  inset: 0;
+  background-size: 400% 300%;
+  background-repeat: no-repeat;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.card-back-traditional {
+  background:
+    repeating-linear-gradient(45deg, #ffffff12 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(-45deg, #ffffff12 0 1px, transparent 1px 5px),
+    #393354;
+}
+@media (max-width: 639px) {
+  .card-style-setting { justify-content: flex-start; }
+  .game-shell { align-items: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-shell *, .game-shell *::before, .game-shell *::after { transition: none !important; animation: none !important; }
+}
+.landing-art-credit {
+  position: absolute;
+  bottom: max(6px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  color: var(--text-secondary);
+  font-size: .625rem;
+  text-underline-offset: 3px;
 }
